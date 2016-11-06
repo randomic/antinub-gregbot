@@ -1,0 +1,10 @@
+import os
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+LOG_PATH = os.path.abspath(os.path.join(PROJECT_ROOT, 'log'))
+
+
+TOKEN = 'my token'
+CHANNEL_ID = 012345678123456789 # The ID of the channel the bot should talk in by default.
+OWNER_ID = 01234567891234567 # The ID of the person the bot should listen to for sensitive commands.
+
+DEBUG = False
