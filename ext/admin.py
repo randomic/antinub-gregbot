@@ -38,7 +38,7 @@ class Admin:
             return data
             self.logger.info('Json successfully loaded.')
         except FileNotFoundError:
-            return {}
+            return {'admins' : []}
     
     def savejson(self, data, jsonname):
         try:
