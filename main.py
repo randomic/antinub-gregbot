@@ -23,22 +23,23 @@ else:
 logger = logging.getLogger(__name__)
 
 
-# Create the client
-client = commands.Bot('!')
-@client.listen()
+# Create the bot
+bot = commands.Bot('!')
+
+@bot.listen()
 async def on_ready():
-    logger.info('Logged in as %s, id: %s', client.user.name, client.user.id)
+    logger.info('Logged in as %s, id: %s', bot.user.name, bot.user.id)
 
 
-# Import the bot's features and initialize them.
-logger.info('Loading features')
+# Import the bot's extensions and initialize them.
+logger.info('Loading extensions')
 
 for ext in config.ENABLED_EXTENSIONS:
     try:
-        client.load_extension('bot.%s' % ext)
+        bot.load_extension('ext.%s' % ext)
     except ImportError as e:
         logger.error('Failed to load extension: %s - %s', ext, e)
 
 
 logger.info('Starting up bot')
-client.run(config.TOKEN)
+bot.run(config.TOKEN)
