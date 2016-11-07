@@ -4,11 +4,26 @@ LOG_PATH = os.path.abspath(os.path.join(PROJECT_ROOT, 'log'))
 
 
 TOKEN = 'my token'
-CHANNEL_ID = 'channel id here' # The ID of the channel the bot should talk in by default.
 OWNER_ID = 'owner id here' # The ID of the person the bot should listen to for sensitive commands.
 
-DEBUG = False
+DEBUG = False # Extremely verbose logging when true.
 
 ENABLED_EXTENSIONS = [
     'control',
+    'jabber',
+]
+
+JABBER_SERVERS = [
+    {
+        'jabber_id':    'user@jabber.server',
+        'password':     'hunter2',
+        'relay_from':   'important_messages@jabber.server',
+        'channel':      'channel id here',
+    },
+    {
+        'jabber_id':    'user@jabber2.server',
+        'password':     'hunter2',
+        'relay_from':   'important_messages@jabber2.server',
+        'channel':      'channel id here',
+    },
 ]
