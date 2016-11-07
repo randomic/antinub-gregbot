@@ -51,7 +51,7 @@ class XmppRelay(ClientXMPP):
         sender = msg['from'].bare
         if sender == self.relay_from:
             self.logger.info('Relaying message from %s', sender)
-            r_message = '```BROADCAST FROM: {}\n\n{}```'.format(sender, msg['body'])
+            r_message = '```@everyone BROADCAST FROM: {}\n\n{}```'.format(sender, msg['body'])
             await self.bot.send_message(self.channel, r_message)
         else:
             self.logger.info('Ignored message from %s', sender)
