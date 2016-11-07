@@ -19,7 +19,7 @@ class Control:
     bot's operation such as stopping the bot'''
     def __init__(self, client):
         self.logger = logging.getLogger(__name__)
-        self.client = client
+        self.bot = client
 
     async def on_command_error(self, exception, context):
             self.logger.debug(type(exception))
@@ -28,10 +28,10 @@ class Control:
     @commands.check(isOwner)
     async def stop(self):
         '''Logs the bot out of discord and stops it'''
-        await self.client.say('до свидания')
-        await self.client.logout()
+        await self.bot.say('до свидания')
+        await self.bot.logout()
     
     @commands.command()
     async def wopolusa(self):
         '''Sends a picture of wopolusa to the chat'''
-        await self.client.say('http://i.imgur.com/wnwTGnf.png')
+        await self.bot.say('http://i.imgur.com/wnwTGnf.png')
