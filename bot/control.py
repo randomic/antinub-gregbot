@@ -30,3 +30,8 @@ class Control:
         '''Logs the bot out of discord and stops it'''
         await self.client.say('до свидания')
         await self.client.logout()
+    
+    @commands.command()
+    async def wopolusa(self):
+        '''Sends a picture of wopolusa to the chat'''
+        await self.client.say('http://i.imgur.com/wnwTGnf.png')
