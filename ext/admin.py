@@ -6,8 +6,8 @@ import discord
 import discord.ext.commands as commands
 
 
-def setup(client):
-    client.add_cog(Admin(client))
+def setup(bot):
+    bot.add_cog(Admin(bot))
 
 
 # Helper functions
@@ -27,9 +27,9 @@ def isAdmin(context):
 class Admin:
     '''A cog defining commands for controlling the
     bot's operation such as stopping the bot'''
-    def __init__(self, client):
+    def __init__(self, bot):
         self.logger = logging.getLogger(__name__)
-        self.client = client
+        self.bot = bot
     
     def loadjson(self, jsonname):
         try:
@@ -62,10 +62,10 @@ class Admin:
             self.data['admins'].append(ID)
             self.savejson(self.data, 'adminlist.json')
             self.logger.info('%s added as an admin' % ID)
-            await self.client.say('%s added as an admin.' % ID)
+            await self.bot.say('%s added as an admin.' % ID)
         else:
             self.logger.warning('User entered invalid ID.')
-            await self.client.say('You entered an invalid ID.')
+            await self.bot.say('You entered an invalid ID.')
     
     @commands.command()
     @commands.check(isOwner)
@@ -76,10 +76,10 @@ class Admin:
             self.data['admins'].remove(ID)
             self.savejson(self.data, 'adminlist.json')
             self.logger.info('%s removed from the admin list.' % ID)
-            await self.client.say('%s has been removed from the admin list.' % ID)
+            await self.bot.say('%s has been removed from the admin list.' % ID)
         else:
             self.logger.warning('User entered invalid ID: %s', ID)
-            await self.client.say('You entered an invalid ID.')
+            await self.bot.say('You entered an invalid ID.')
     
     @commands.command()
     @commands.check(isAdmin)
@@ -87,19 +87,19 @@ class Admin:
         '''Prints a list of the admin ID's to the chat.'''
         self.data = self.loadjson('adminlist.json')
         self.logger.info('User listed admin ID\'s')
-        await self.client.say('**-------- ADMINS --------**')
+        await self.bot.say('**-------- ADMINS --------**')
         for admin in self.data['admins']:
             try: 
-                user = await self.client.get_user_info(admin)
+                user = await self.bot.get_user_info(admin)
                 self.logger.info("%s - %s", user.name, user.id)
-                await self.client.say('**User:** %s, **ID:** %s' % (user.name, user.id))
+                await self.bot.say('**User:** %s, **ID:** %s' % (user.name, user.id))
             except discord.errors.NotFound as e:
                 self.logger.info('NotFound - %s', admin)
-                await self.client.say('**User:** NotFound (Is this a valid ID?), **ID:** %s' % admin)
+                await self.bot.say('**User:** NotFound (Is this a valid ID?), **ID:** %s' % admin)
                 
     @commands.command()
     @commands.check(isAdmin)
     async def isadmin(self):
         '''Checks if the user is an admin'''
         self.logger.info('User checked if they were an admin')
-        await self.client.say('You are an admin! Congratulations but you still suck.')
+        await self.bot.say('You are an admin! Congratulations but you still suck.')
