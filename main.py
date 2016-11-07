@@ -5,7 +5,7 @@ import json
 from importlib import import_module
 
 import config
-import discord
+import discord.ext.commands as commands
 
 
 # Configure logging from json file or use defaults.
@@ -24,25 +24,20 @@ logger = logging.getLogger(__name__)
 
 
 # Create the client
-client = discord.Client()
-@client.async_event
-def on_ready():
+client = commands.Bot('!')
+@client.listen()
+async def on_ready():
     logger.info('Logged in as %s, id: %s', client.user.name, client.user.id)
 
 
 # Import the bot's features and initialize them.
 logger.info('Loading features')
-features = {} # A dictionary to store the instance of the Main class for each feature.
 
-for feature in config.ENABLED_FEATURES:
-    module = 'bot.%s' % feature
+for ext in config.ENABLED_EXTENSIONS:
     try:
-        mod = import_module(module)
-        main = mod.Main(client)
-        features['feature'] = main
-        logger.debug('Loaded feature: %s', feature)
+        client.load_extension('bot.%s' % ext)
     except ImportError as e:
-        logger.error('Failed to load feature: %s - %s', feature, e)
+        logger.error('Failed to load extension: %s - %s', ext, e)
 
 
 logger.info('Starting up bot')
