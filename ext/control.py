@@ -19,6 +19,7 @@ class Control:
     bot's operation such as stopping the bot'''
     def __init__(self, bot):
         self.logger = logging.getLogger(__name__)
+
         self.bot = bot
 
     async def on_command_error(self, exception, context):
@@ -30,3 +31,8 @@ class Control:
         '''Logs the bot out of discord and stops it'''
         await self.bot.say('до свидания')
         await self.bot.logout()
+    
+    @commands.command()
+    async def wopolusa(self):
+        '''Sends a picture of wopolusa to the chat'''
+        await self.bot.say('http://i.imgur.com/wnwTGnf.png')
