@@ -1,12 +1,6 @@
-import logging
-import logging.config
-import os
-import json
-from importlib import import_module
-
+import logging, logging.config
+import os, json
 import config
-import discord.ext.commands as commands
-
 
 # Configure logging from json file or use defaults.
 loglevel = logging.DEBUG if config.DEBUG else logging.INFO
@@ -23,6 +17,10 @@ else:
 logger = logging.getLogger(__name__)
 
 
+from importlib import import_module
+
+import discord.ext.commands as commands
+
 # Create the bot
 bot = commands.Bot('!')
 
@@ -37,8 +35,9 @@ logger.info('Loading extensions')
 for ext in config.ENABLED_EXTENSIONS:
     try:
         bot.load_extension('ext.%s' % ext)
+        logger.info('Successfully loaded extension: %s', ext)
     except ImportError as e:
-        logger.error('Failed to load extension: %s - %s', ext, e)
+        logger.warn('Failed to load extension: %s - %s', ext, e)
 
 
 logger.info('Starting up bot')
