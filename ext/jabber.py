@@ -30,6 +30,7 @@ class Jabber:
     async def on_ready(self):
         'Waits for the discord bot to be ready before creating jabber clients'
         for server in self.xmpp_servers:
+            self.logger.info('Creat')
             self.xmpp_relays.append(XmppRelay(self.bot, server))
 
     def get_status(self):
@@ -49,6 +50,10 @@ class XmppRelay(ClientXMPP):
     '''Connects to an XMPP server and relays broadcasts
     to a specified discord channel'''
     def __init__(self, bot, jabber_server):
+        ClientXMPP.__init__(self,
+                            jabber_server['jabber_id'],
+                            jabber_server['password'])
+
         self.logger = logging.getLogger(__name__)
         self.bot = bot
         self.relay_from = jabber_server['relay_from']
@@ -59,10 +64,6 @@ class XmppRelay(ClientXMPP):
             self.process()
 
         self.add_event_handler('message', self.message)
-
-        ClientXMPP.__init__(self,
-                            jabber_server['jabber_id'],
-                            jabber_server['password'])
 
     def start(self, dummy_event):
         'Follow standard xmpp protocol after connecting to the server'
