@@ -74,3 +74,33 @@ class Control:
         for response in responses:
             await self.bot.say(response)
 
+    def get_status(self):
+        'Returns a string describing the status of this cog'
+        if self.bot.is_logged_in:
+            return 'Logged in as {}, id: {}'.format(
+                self.bot.user.name, self.bot.user.id)
+        else:
+            return 'Bot is not currently logged in'
+
+    @commands.command()
+    @commands.check(is_owner)
+    async def status(self, *args: str):
+        'Returns the status of the named cog based on its status property'
+        if len(args) == 0:
+            args = self.bot.cogs
+
+        response = ''
+        for name in args:
+            if name in self.bot.cogs:
+                cog = self.bot.cogs[name]
+                try:
+                    report = cog.get_status()
+                except AttributeError as exc:
+                    self.logger.warning(exc)
+                    report = None
+                response += '{}: {}\n'.format(name, report)
+            else:
+                response += 'No extension called {}\n'.format(name)
+
+        for page in paginate(response):
+            await self.bot.say(page)
