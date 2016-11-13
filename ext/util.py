@@ -1,31 +1,42 @@
+'''
+Main helper cog made for antinub-gregbot project.
+
+Contains several commands useful for controlling/debugging the bot
+'''
 import logging
-import config
-
-import discord.ext.commands as commands
-
 import os
 from collections import deque
 
+import discord.ext.commands as commands
+
+import config
+
 
 def setup(bot):
+    'Adds the cog to the provided discord bot'
     bot.add_cog(Control(bot))
 
 
 # Helper functions
-def isOwner(context):
+def is_owner(context):
     'Check whether or not the user is the owner of the bot'
     return context.message.author.id == config.OWNER_ID
 
-def segment(string, max_length, sep=''):
-    '''Chops a string into even chunks of
-    max_length around the given separator'''
-    n = len(string)
-    if n <= max_length:
-        return [string]
+
+def paginate(string, pref='```', suff='```', max_length=2000, sep='\n'):
+    'Chops a string into even chunks of max_length around the given separator'
+    max_size = max_length - len(pref) - len(suff) + len(sep)
+    str_length = len(string)
+    if str_length <= max_size:
+        return [pref + string + suff]
     else:
-        x = string.rfind(sep, 0, max_length) + 1
-        if not x: x = max_length
-        return [string[:x]] + segment(string[x:], max_length, sep)
+        split = string.rfind(sep, 0, max_size) + 1
+        if split:
+            return ([pref + string[:split-1] + suff]
+                    + paginate(string[split:], pref, suff, max_length, sep))
+        else:
+            return ([pref + string[:max_size] + suff]
+                    + paginate(string[max_size:], pref, suff, max_length, sep))
 
 
 class Control:
@@ -33,7 +44,6 @@ class Control:
     bot's operation such as stopping the bot'''
     def __init__(self, bot):
         self.logger = logging.getLogger(__name__)
-
         self.bot = bot
 
     async def on_command_error(self, exception, context):
@@ -41,24 +51,26 @@ class Control:
         self.logger.debug(exception)
 
     @commands.command()
-    @commands.check(isOwner)
+    @commands.check(is_owner)
     async def stop(self):
         'Logs the bot out of discord and stops it'
         await self.bot.say('до свидания')
+        self.logger.info('Stopping bot on command')
         await self.bot.logout()
-    
-    @commands.command()
-    @commands.check(isOwner)
-    async def debug(self, n : int = 10):
-        'The bot posts the last n (default 10) lines of its logfile'
-        with open(os.path.join(config.LOG_PATH, 'info.log'), 'rt') as f:
-            lines = deque(f, n)
-        pref = 'Here are the last %s lines of the log:\n' % n
-        body = ''.join(lines)
-        form = '```'
 
-        responses = segment(body, 1800, '\n')
+    @commands.command()
+    @commands.check(is_owner)
+    async def debug(self, n_lines: int=10):
+        'The bot posts the last n (default 10) lines of its logfile'
+        with open(os.path.join(config.LOG_PATH, 'info.log'), 'rt') as log:
+            lines = deque(log, n_lines)
+        pref = 'Here are the last %s lines of the log:\n' % n_lines
+        body = ''.join(lines)
+
+        # NOTE: Could be changed if discord increases the char limit
+        responses = paginate(body)
 
         await self.bot.say(pref)
         for response in responses:
-            await self.bot.say(form + response + form)
+            await self.bot.say(response)
+
