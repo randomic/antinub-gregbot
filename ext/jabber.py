@@ -32,6 +32,17 @@ class Jabber:
         for server in self.xmpp_servers:
             self.xmpp_relays.append(XmppRelay(self.bot, server))
 
+    def get_status(self):
+        'Returns a string describing the status of this cog'
+        if self.xmpp_relays:
+            response = ''
+            for xmpp_relay in self.xmpp_relays:
+                response += '{}: '.format(xmpp_relay.server)
+                online = xmpp_relay.is_connected()
+                response += 'Connected' if online else 'Disconnected'
+        else:
+            response = 'No relays initialised'
+        return response
 
 
 class XmppRelay(ClientXMPP):
