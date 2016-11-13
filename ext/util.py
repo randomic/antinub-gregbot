@@ -46,9 +46,17 @@ class Control:
         self.logger = logging.getLogger(__name__)
         self.bot = bot
 
-    async def on_command_error(self, exception, context):
-        #TODO: Handle command errors better
-        self.logger.debug(exception)
+    async def on_command_error(self, exception, ctx):
+        'Assign a handler for errors caused by commands'
+        logger = self.logger if not ctx.cog else ctx.cog.logger
+
+        if isinstance(exception, commands.CheckFailure):
+            logger.warning('{} attempted to use {} command'.format(
+                ctx.message.author.name, ctx.command))
+        elif isinstance(exception, commands.CommandNotFound):
+            logger.debug(exception)
+        else:
+            logger.error(exception)
 
     @commands.command()
     @commands.check(is_owner)
