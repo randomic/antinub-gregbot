@@ -37,7 +37,7 @@ class Jabber:
         if self.xmpp_relays:
             response = ''
             for xmpp_relay in self.xmpp_relays:
-                response += '{}: '.format(xmpp_relay.server)
+                response += '\n{}: '.format(xmpp_relay.server)
                 online = xmpp_relay.is_connected()
                 response += 'Connected' if online else 'Disconnected'
         else:
