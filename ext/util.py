@@ -106,9 +106,9 @@ class Control:
                 except AttributeError as exc:
                     self.logger.warning(exc)
                     report = None
-                response += '{}: {}\n'.format(name, report)
+                response += '{}: {}\n\n'.format(name, report)
             else:
-                response += 'No extension called {}\n'.format(name)
+                response += 'No extension called {}\n\n'.format(name)
 
         for page in paginate(response):
             await self.bot.say(page)
