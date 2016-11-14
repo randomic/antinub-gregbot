@@ -53,11 +53,11 @@ if __name__ == '__main__':
     LOGGER.info('------------------------------')
     LOGGER.info('Starting up bot')
     BOT = commands.Bot('!')
-    _load_extensions(BOT)
 
     @BOT.listen()
     async def on_ready():
         'Note in log when the bot is ready'
         LOGGER.info('Logged in as %s, id: %s', BOT.user.name, BOT.user.id)
+        _load_extensions(BOT)
 
     BOT.run(config.TOKEN)

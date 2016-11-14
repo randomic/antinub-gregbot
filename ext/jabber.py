@@ -26,9 +26,6 @@ class Jabber:
         self.bot = bot
         self.xmpp_servers = xmpp_servers
         self.xmpp_relays = []
-
-    async def on_ready(self):
-        'Waits for the discord bot to be ready before creating jabber clients'
         for server in self.xmpp_servers:
             self.xmpp_relays.append(XmppRelay(self.bot, server))
 
