@@ -1,63 +1,55 @@
+'''
+Meme cog made by Steveizi for antinub-gregbot project.
+
+Contains several useless but fun commands
+'''
 import logging
-import config
 from random import randint
-import discord
 
 import discord.ext.commands as commands
 
 
 def setup(bot):
+    'Adds the cog to the provided discord bot'
     bot.add_cog(Fun(bot))
-
-
-# Helper functions
-def isOwner(context):
-    'Check whether or not the user is the owner of the bot'
-    return context.message.author.id == config.OWNER_ID
 
 
 class Fun:
     '''A cog defining meme commands'''
     def __init__(self, bot):
         self.logger = logging.getLogger(__name__)
-
         self.bot = bot
-        
+        self.guess_number = 0
+        self.guess_max = 0
+
     @commands.command()
     async def wopolusa(self):
         '''Posts a picture of Wopolusa to the chat'''
         await self.bot.say('http://i.imgur.com/wnwTGnf.png')
-        
-    @commands.command()
-    @commands.check(isOwner)
-    async def initguess(self, MAX : str):
-        '''Randomly generates a number from 0-MAX and
-        allows the user to guess the number'''
-        if MAX.isnumeric():
-            MAX = int(MAX)
-            self.randnumber = randint(0,MAX)
-            self.logger.info('Random number generated: %d', self.randnumber)
-            await self.bot.say('Random number generated between 0 and %d!\nUse "!guess" to try and guess it!' % MAX)
-        else:
-            self.logger.warning('User entered invalid MAX number')
-            await self.bot.say('You entered an invalid max number. Make sure it\'s only numbers!')
-    
-    @commands.command()
-    async def guess(self, GUESS : str):
-        '''Allows the user to guess the number generated
-        in the !initguess command'''
-        if GUESS.isnumeric():
-            GUESS = int(GUESS)
-            if GUESS == self.randnumber:
-                self.logger.info('User guessed correct number')
-                await self.bot.say('You guessed correctly! The number was %d' % self.randnumber)
+
+    @commands.command(pass_context=True)
+    async def guess(self, ctx, guess: int=0):
+        '''Allows the user to guess a number. If there is no number to guess a
+        new game is started'''
+        if self.guess_number:
+            if guess < 1 or guess > self.guess_max:
+                await self.bot.delete_message(ctx.message)
+            elif guess == self.guess_number:
+                await self.bot.say('{} is correct! {} wins!'
+                                   .format(guess, ctx.message.author.mention))
+                self.guess_number = 0
+            elif guess < self.guess_number:
+                await self.bot.say('{} is too low! Guess again!'
+                                   .format(guess))
+                await self.bot.delete_message(ctx.message)
             else:
-                self.logger.info('User guessed incorrect number')
-                difference = self.randnumber - GUESS
-                if difference > 0:
-                    await self.bot.say('You guessed too low! Try again.')
-                else:
-                    await self.bot.say('You guessed too High! Try again.')
+                await self.bot.say('{} is too high! Guess again!'
+                                   .format(guess))
+                await self.bot.delete_message(ctx.message)
         else:
-            self.logger.warning('User entered an invalid guess')
-            await self.bot.say('You entered an invalid guess. Make sure it\'s only numbers!')
+            if guess < 1:
+                guess = 1000
+            self.guess_number = randint(1, guess)
+            self.guess_max = guess
+            await self.bot.say('New game started! Guess the number '
+                               + 'between 1 and {}'.format(guess))
