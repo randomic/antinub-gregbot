@@ -23,20 +23,22 @@ def is_owner(context):
     return context.message.author.id == config.OWNER_ID
 
 
-def paginate(string, pref='```', suff='```', max_length=2000, sep='\n'):
+def paginate(string, formatting='```', max_length=2000, sep='\n', trim=True):
     'Chops a string into even chunks of max_length around the given separator'
-    max_size = max_length - len(pref) - len(suff) + len(sep)
+    max_size = max_length - 2*len(formatting) + len(sep)
+    len_trim = len(sep) if trim else 0
+
     str_length = len(string)
     if str_length <= max_size:
-        return [pref + string + suff]
+        return [formatting + string + formatting]
     else:
         split = string.rfind(sep, 0, max_size) + 1
         if split:
-            return ([pref + string[:split-1] + suff]
-                    + paginate(string[split:], pref, suff, max_length, sep))
+            return ([formatting + string[:split-len_trim] + formatting]
+                    + paginate(string[split:], formatting, max_length, sep))
         else:
-            return ([pref + string[:max_size] + suff]
-                    + paginate(string[max_size:], pref, suff, max_length, sep))
+            return ([formatting + string[:max_size] + formatting]
+                    + paginate(string[max_size:], formatting, max_length, sep))
 
 
 class Control:
@@ -93,7 +95,7 @@ class Control:
     @commands.command()
     @commands.check(is_owner)
     async def status(self, *args: str):
-        'Returns the status of the named cog based on its status property'
+        'Returns the status of the named cog'
         if len(args) == 0:
             args = self.bot.cogs
 
