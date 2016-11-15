@@ -2,7 +2,7 @@
 import logging
 import datetime
 import json
-
+from operator import itemgetter
 import discord.ext.commands as commands
 
 from ext.util import isOwner
@@ -36,11 +36,29 @@ class Timerboard:
     def savejson(self, data, jsonname):
         'A function which saves a json, given the filename'
         try:
+            data['fleets'].sort(key=itemgetter('fleettime'))
             with open(jsonname, 'wt') as outfile:
                 json.dump(data, outfile)
             self.logger.info('Json successfully saved.')
         except TypeError as error:
             self.logger.error(error)
+
+    def listfleet(self, index, announce=False):
+        'Returns a string containing the fleet details given an index'
+        fleets = self.loadjson("fleetlist.json")['fleets']
+        response = ""
+        if announce:
+            response += "@everyone\n"
+        fleet = fleets[index]
+        response += "**Fleet {}:**\n".format(index+1)
+        ftime = datetime.datetime.strptime(fleet["fleettime"], '%Y-%m-%dT%H:%M:%S')
+        response += "```When: {}\n".format(ftime)
+        response += "FC: {}\n".format(fleet["fc"])
+        response += "Type: {}\n".format(fleet['fleettype'])
+        response += "Doctrine: {}\n".format(fleet['doctrine'])
+        response += "Formup: {}```\n".format(fleet['formup'])
+        self.logger.info(response)
+        return response
 
     @commands.command()
     @commands.check(isOwner)
@@ -50,18 +68,21 @@ class Timerboard:
         "DD/MM/YYYY HH/MM FC FORMUP DOCTRINE FLEETTYPE'''
         fleetdtime = datetime.datetime.strptime((fdate + ftime), '%d/%m/%Y%H:%M')
         self.logger.info('Converted to datetime')
-
-        self.fleetjson = self.loadjson("fleetlist.json")
-        self.logger.info(self.fleetjson)
-        self.fleetjson["fleets"].append({
-            'fleettime': fleetdtime.isoformat(),
-            'fc': flco,
-            'formup': formup,
-            'doctrine': doct,
-            'fleettype': ftype
-        })
-        self.savejson(self.fleetjson, 'fleetlist.json')
-        await self.bot.say(self.fleetjson["fleets"])
+        if fleetdtime <= datetime.datetime.now():
+            await self.bot.say("Date entered is before the current date.")
+            self.logger.warning("User entered an invalid date")
+        else:
+            self.fleetjson = self.loadjson("fleetlist.json")
+            self.fleetjson["fleets"].append({
+                'fleettime': fleetdtime.isoformat(),
+                'fc': flco,
+                'formup': formup,
+                'doctrine': doct,
+                'fleettype': ftype,
+                'announced': False
+            })
+            self.savejson(self.fleetjson, 'fleetlist.json')
+            await self.bot.say("Fleet successfully added!")
 
     @commands.command()
     @commands.check(isOwner)
@@ -73,7 +94,7 @@ class Timerboard:
             if number >= 1:
                 self.fleetjson['fleets'].pop(number-1)
                 self.savejson(self.fleetjson, 'fleetlist.json')
-                await self.bot.say(self.fleetjson["fleets"])
+                await self.bot.say("Fleet %d successfully removed." % number)
             else:
                 await self.bot.say("You didn't enter a valid number.")
                 self.logger.warning("User didn't enter a valid number.")
@@ -84,14 +105,46 @@ class Timerboard:
     @commands.command()
     async def listfleets(self):
         'Lists all fleets to the chat in discord'
-        self.fleetjson = self.loadjson("fleetlist.json")
-        for fleet in self.fleetjson['fleets']:
-            for info in self.fleetjson[fleet]:
-                await self.bot.say(info, ':', self.fleetjson[info][fleet])
+        fleets = self.loadjson("fleetlist.json")['fleets']
+        n_fleets = len(fleets)
+        self.logger.info(fleets)
+        for idx in range(n_fleets):
+            await self.bot.say(self.listfleet(idx))
 
     @commands.command()
-    async def datetime(self):
-        'Prints the current datetime to the chat and logger'
-        currentdate = datetime.datetime.now()
-        self.logger.info(currentdate)
-        await self.bot.say(currentdate)
+    @commands.check(isOwner)
+    async def announcefleets(self):
+        'Announces all un-announced fleets'
+        self.fleetjson = self.loadjson("fleetlist.json")
+        n_fleets = len(self.fleetjson['fleets'])
+        announced = False
+        for idx in range(n_fleets):
+            if not self.fleetjson['fleets'][idx]["announced"]:
+                await self.bot.say(self.listfleet(idx, True))
+                self.fleetjson['fleets'][idx]["announced"] = True
+                self.savejson(self.fleetjson, 'fleetlist.json')
+                announced = True
+        if not announced:
+            await self.bot.say("All Fleets Announced!")
+
+    @commands.command()
+    @commands.check(isOwner)
+    async def resetannouncefleets(self, number: str):
+        '''Resets the boolean specifying whether a fleet has been announced.
+        Enter a fleet number to reset a specific fleet or "all" to reset all'''
+        self.fleetjson = self.loadjson("fleetlist.json")
+        n_fleets = len(self.fleetjson['fleets'])
+        if number.isdecimal():
+            self.fleetjson['fleets'][int(number)-1]["announced"] = False
+            self.savejson(self.fleetjson, 'fleetlist.json')
+            await self.bot.say("Fleet %s's announcement status reset." % number)
+            self.logger.info('User reset fleet %s\'s announcement status', number)
+        elif number == "all":
+            for idx in range(n_fleets):
+                self.fleetjson['fleets'][idx]["announced"] = False
+            self.savejson(self.fleetjson, 'fleetlist.json')
+            await self.bot.say("All anouncement statuses reset.")
+            self.logger.info('User reset all announcement statuses')
+        else:
+            await self.bot.say("Please enter a valid number to reset or 'all' to reset all")
+            self.logger.warning('User entered an invalid number to reset.')
