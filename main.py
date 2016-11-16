@@ -3,9 +3,11 @@ Entry point for antinub-gregbot project.
 
 Configures logging, loads startup extensions and starts the bot.
 '''
+import aiohttp
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+import socket
 
 import discord.ext.commands as commands
 
@@ -52,7 +54,8 @@ if __name__ == '__main__':
     LOGGER = logging.getLogger(__name__)
     LOGGER.info('------------------------------')
     LOGGER.info('Starting up bot')
-    BOT = commands.Bot('!')
+    connector = aiohttp.TCPConnector(family=socket.AF_INET)
+    BOT = commands.Bot('!', connector=connector)
 
     @BOT.listen()
     async def on_ready():
