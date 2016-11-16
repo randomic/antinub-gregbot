@@ -88,6 +88,22 @@ class Control:
         for response in responses:
             await self.bot.say(response)
 
+    @commands.command()
+    @commands.check(is_owner)
+    async def errors(self, n_lines: int=10):
+        'The bot posts the last n (default 10) lines of its logfile'
+        with open(os.path.join(config.LOG_PATH, 'error.log'), 'rt') as log:
+            lines = deque(log, n_lines)
+        pref = 'Here are the last %s lines of the error log:\n' % n_lines
+        body = ''.join(lines)
+
+        # NOTE: Could be changed if discord increases the char limit
+        responses = paginate(body)
+
+        await self.bot.say(pref)
+        for response in responses:
+            await self.bot.say(response)
+
     def get_status(self):
         'Returns a string describing the status of this cog'
         if self.bot.is_logged_in:
