@@ -24,7 +24,6 @@ class Killmails:
         self.bot = bot
         self.channel = self.bot.get_channel('244849123759489024')
         # self.corp_id = 98199571
-        self.session = aiohttp.ClientSession(loop=self.bot.loop)
         self.corp_id = 98388312
         self.listening = False
         self.url = 'http://redisq.zkillboard.com/listen.php'
@@ -59,7 +58,7 @@ class Killmails:
 
     async def retrieve_kills(self):
         'Returns a dictionary containing the contents of the redisQ package'
-        async with self.session.get(self.url) as response:
+        async with self.bot.http.session.get(self.url) as response:
             assert response.status == 200
             zkb_data = await response.json()
             return zkb_data['package']
@@ -73,7 +72,6 @@ class Killmails:
                 await self.handle_package(package)
             except Exception as exc:
                 self.logger.error('%s: %s', type(exc), exc)
-        self.session.close()
 
     def start_listening(self):
         'Starts the task of checking for new killmails every 5 minutes'
@@ -82,7 +80,6 @@ class Killmails:
 
     def __unload(self):
         self.listening = False
-        self.session.close()
 
 # if __name__ == '__main__':
 #     logging.basicConfig()
