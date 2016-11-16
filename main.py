@@ -22,11 +22,17 @@ def _configure_logging():
     fmt = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    file_h = RotatingFileHandler(
+    file_ih = RotatingFileHandler(
         os.path.join(config.LOG_PATH, 'info.log'))
-    file_h.setLevel(logging.INFO)
-    file_h.setFormatter(fmt)
-    root_logger.addHandler(file_h)
+    file_ih.setLevel(logging.INFO)
+    file_ih.setFormatter(fmt)
+    root_logger.addHandler(file_ih)
+
+    file_eh = RotatingFileHandler(
+        os.path.join(config.LOG_PATH, 'error.log'))
+    file_eh.setLevel(logging.ERROR)
+    file_eh.setFormatter(fmt)
+    root_logger.addHandler(file_eh)
 
     console_h = logging.StreamHandler()
     console_h.setLevel(logging.DEBUG)
