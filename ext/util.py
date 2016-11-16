@@ -58,7 +58,7 @@ class Control:
         elif isinstance(exception, commands.CommandNotFound):
             logger.debug(exception)
         else:
-            logger.error(exception)
+            logger.exception(exception)
 
     @commands.command()
     @commands.check(is_owner)

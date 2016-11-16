@@ -71,7 +71,7 @@ class Killmails:
                 package = await self.retrieve_kills()
                 await self.handle_package(package)
             except Exception as exc:
-                self.logger.error('%s: %s', type(exc), exc)
+                self.logger.exception(exc)
 
     def start_listening(self):
         'Starts the task of checking for new killmails every 5 minutes'
