@@ -64,8 +64,12 @@ class Control:
     @commands.check(is_owner)
     async def stop(self):
         'Logs the bot out of discord and stops it'
+        self.logger.info('Unloading extensions')
+        extensions = list(self.bot.extensions.keys())
+        for extension in extensions:
+            self.bot.unload_extension(extension)
         await self.bot.say('до свидания')
-        self.logger.info('Stopping bot on command')
+        self.logger.info('Logging out')
         await self.bot.logout()
 
     @commands.command()
