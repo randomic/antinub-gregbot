@@ -22,12 +22,17 @@ class Fun:
         self.logger = logging.getLogger(__name__)
 
         self.bot = bot
-        
+
     @commands.command()
     async def wopolusa(self):
         '''Posts a picture of Wopolusa to the chat'''
         await self.bot.say('http://i.imgur.com/wnwTGnf.png')
-        
+
+    @commands.command()
+    async def stalin(self):
+        '''Posts a picture describing Stalin\'s limit'''
+        await self.bot.say('https://i.imgur.com/5ujkkrz.gif')
+
     @commands.command()
     @commands.check(isOwner)
     async def initguess(self, MAX : str):
@@ -41,7 +46,7 @@ class Fun:
         else:
             self.logger.warning('User entered invalid MAX number')
             await self.bot.say('You entered an invalid max number. Make sure it\'s only numbers!')
-    
+
     @commands.command()
     async def guess(self, GUESS : str):
         '''Allows the user to guess the number generated
