@@ -10,12 +10,12 @@ import logging
 
 from slixmpp import ClientXMPP
 
-import config
+from config import JABBER
 
 
 def setup(bot):
     'Adds the cog to the provided discord bot'
-    bot.add_cog(Jabber(bot, config.JABBER_SERVERS))
+    bot.add_cog(Jabber(bot, JABBER['servers']))
 
 
 class Jabber:
@@ -27,8 +27,10 @@ class Jabber:
         self.xmpp_servers = xmpp_servers
         self.xmpp_relays = []
 
-    async def on_ready(self):
-        'Waits for the discord bot to be ready before creating jabber clients'
+        self.create_clients()
+
+    def create_clients(self):
+        'Creates an XmppRelay client for each server specified'
         for server in self.xmpp_servers:
             self.xmpp_relays.append(XmppRelay(self.bot, server))
 
@@ -37,12 +39,18 @@ class Jabber:
         if self.xmpp_relays:
             response = ''
             for xmpp_relay in self.xmpp_relays:
-                response += '\n{}: '.format(xmpp_relay.boundjid.host)
-                online = xmpp_relay.is_connected()
-                response += 'Connected' if online else 'Disconnected'
+                if xmpp_relay.is_connected():
+                    resp = '\n  \u2714 {} - Connected'
+                else:
+                    resp = '\n  \u2716 {} - Disconnected'
+                response += resp.format(xmpp_relay.boundjid.host)
         else:
-            response = 'No relays initialised'
+            response = '\n  \u2716 No relays initialised'
         return response
+
+    def __unload(self):
+        for xmpp_relay in self.xmpp_relays:
+            xmpp_relay.disconnect()
 
 
 class XmppRelay(ClientXMPP):
