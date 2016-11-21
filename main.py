@@ -3,13 +3,13 @@ Entry point for antinub-gregbot project.
 
 Configures logging, loads startup extensions and starts the bot.
 '''
-import aiohttp
 import logging
 from logging.handlers import RotatingFileHandler
 import os
-import socket
+from socket import AF_INET
 
 import discord.ext.commands as commands
+from aiohttp import TCPConnector
 
 import config
 
@@ -44,24 +44,35 @@ def _load_extensions(bot):
     'Load the startup extensions'
     logger = logging.getLogger(__name__)
     logger.info('Loading extensions')
+    bot.load_extension('util')
+    logger.info('Successfully loaded extension: util')
 
     for ext in config.STARTUP_EXTENSIONS:
-        try:
-            bot.load_extension('ext.%s' % ext)
-            logger.info('Successfully loaded extension: %s', ext)
-        except ImportError as exc:
-            logger.warning('Failed to load extension: %s - %s', ext, exc)
+        ext_string = 'ext.{}'.format(ext)
+        if ext_string not in bot.extensions:
+            try:
+                bot.load_extension(ext_string)
+                logger.info('Successfully loaded extension: %s', ext)
+            except ImportError as exc:
+                logger.warning('Failed to load extension: %s - %s', ext, exc)
+        else:
+            logger.warning('Extension with same name already loaded: %s', ext)
 
 
-if __name__ == '__main__':
+def _create_bot():
     _configure_logging()
 
     # Create the bot
-    LOGGER = logging.getLogger(__name__)
-    LOGGER.info('------------------------------')
-    LOGGER.info('Starting up bot')
-    connector = aiohttp.TCPConnector(family=socket.AF_INET)
-    BOT = commands.Bot('!', connector=connector)
+    logger = logging.getLogger(__name__)
+    logger.info('------------------------------')
+    logger.info('Starting up bot')
+    socket_family = AF_INET if config.FORCE_IPV4 else 0
+    custom_connector = TCPConnector(family=socket_family)
+    return commands.Bot('!', connector=custom_connector), logger
+
+
+if __name__ == '__main__':
+    BOT, LOGGER = _create_bot()
 
     @BOT.listen()
     async def on_ready():
