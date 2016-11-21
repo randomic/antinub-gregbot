@@ -27,6 +27,11 @@ class Fun:
         '''Posts a picture of Wopolusa to the chat'''
         await self.bot.say('http://i.imgur.com/wnwTGnf.png')
 
+    @commands.command()
+    async def stalin(self):
+        '''Posts a picture describing Stalin\'s limit'''
+        await self.bot.say('https://i.imgur.com/5ujkkrz.gifv')
+
     @commands.command(pass_context=True)
     async def guess(self, ctx, guess: int=0):
         '''Allows the user to guess a number. If there is no number to guess a
