@@ -15,8 +15,9 @@ OWNER_ID = 'owner id here' # The ID of the person the bot should listen to for s
 DEBUG = False # Extremely verbose logging when true.
 
 STARTUP_EXTENSIONS = [
-    'util',
-    #'jabber',
+    # 'killmails',
+    # 'jabber',
+    # 'fun'
 ]
 
 JABBER_SERVERS = [
