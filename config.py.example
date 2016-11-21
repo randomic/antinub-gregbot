@@ -12,25 +12,41 @@ LOG_PATH = os.path.join(PROJECT_ROOT, 'log')
 TOKEN = 'my token'
 OWNER_ID = 'owner id here' # The ID of the person the bot should listen to for sensitive commands.
 
-DEBUG = False # Extremely verbose logging when true.
+# Extremely verbose logging when true.
+DEBUG = False
+# If your network has difficulties with IPv6 you will need to set this to True
+FORCE_IPV4 = False
 
+# util extension is considered essential and will be automatically loaded first
 STARTUP_EXTENSIONS = [
     # 'killmails',
     # 'jabber',
     # 'fun'
 ]
 
-JABBER_SERVERS = [
-    {
-        'jabber_id':    'user@jabber.server',
-        'password':     'hunter2',
-        'relay_from':   ['important_messages@jabber.server'],
-        'channel':      'channel id here',
-    },
-    {
-        'jabber_id':    'user@jabber2.server',
-        'password':     'hunter2',
-        'relay_from':   ['important_messages@jabber2.server'],
-        'channel':      'channel id here',
-    },
-]
+
+# EXTENSION SPECIFIC SETTINGS
+
+KILLMAILS = {
+    'redisQ_uri': 'http://redisq.zkillboard.com/listen.php',
+    'corp_id': 98388312,
+    'channel_id': 'channel id here',
+    # 'is_relevant': lambda x: x['killmail']['victim']['corporation']['name']
+}
+
+JABBER = {
+    'servers': [
+        {
+            'jabber_id':    'user@jabber.server',
+            'password':     'hunter2',
+            'relay_from':   ['important_messages@jabber.server'],
+            'channel':      'channel id here'
+        },
+        {
+            'jabber_id':    'user@jabber2.server',
+            'password':     'hunter2',
+            'relay_from':   ['important_messages@jabber2.server'],
+            'channel':      'channel id here'
+        }
+    ]
+}
