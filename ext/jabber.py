@@ -1,57 +1,88 @@
+'''
+Jabber relay cog made for antinub-gregbot project.
+
+When added to a bot it creates an xmpp client per one configured in
+config.JABBER_SERVERS
+It will then listen on those servers and relay any messages received if
+they are sent by a jid in the config.JABBER_SERVERS['relay_from'] list
+'''
 import logging
-import config
-import asyncio
 
 from slixmpp import ClientXMPP
-import discord.ext.commands as commands
+
+from config import JABBER
 
 
 def setup(bot):
-    bot.add_cog(Jabber(bot, config.JABBER_SERVERS))
+    'Adds the cog to the provided discord bot'
+    bot.add_cog(Jabber(bot, JABBER['servers']))
 
 
 class Jabber:
-    '''A cog which connects to config defined xmpp
-    servers and relays messages from certain senders
-    to the config defined channel.'''
-    def __init__(self, bot, jabberServers):
+    '''A cog which connects to config defined xmpp servers and relays messages
+    from certain senders to the config defined channel'''
+    def __init__(self, bot, xmpp_servers):
         self.logger = logging.getLogger(__name__)
         self.bot = bot
-        self.jabberServers = jabberServers
-        self.xmppRelays = []
+        self.xmpp_servers = xmpp_servers
+        self.xmpp_relays = []
 
-    async def on_ready(self):
-        for server in self.jabberServers:
-            self.xmppRelays.append( XmppRelay(self.bot, server) )
+        self.create_clients()
+
+    def create_clients(self):
+        'Creates an XmppRelay client for each server specified'
+        for server in self.xmpp_servers:
+            self.xmpp_relays.append(XmppRelay(self.bot, server))
+
+    def get_status(self):
+        'Returns a string describing the status of this cog'
+        if self.xmpp_relays:
+            response = ''
+            for xmpp_relay in self.xmpp_relays:
+                if xmpp_relay.is_connected():
+                    resp = '\n  \u2714 {} - Connected'
+                else:
+                    resp = '\n  \u2716 {} - Disconnected'
+                response += resp.format(xmpp_relay.boundjid.host)
+        else:
+            response = '\n  \u2716 No relays initialised'
+        return response
+
+    def __unload(self):
+        for xmpp_relay in self.xmpp_relays:
+            xmpp_relay.disconnect()
 
 
 class XmppRelay(ClientXMPP):
     '''Connects to an XMPP server and relays broadcasts
     to a specified discord channel'''
-    def __init__(self, bot, jabberDetails):
+    def __init__(self, bot, jabber_server):
+        ClientXMPP.__init__(self,
+                            jabber_server['jabber_id'],
+                            jabber_server['password'])
+
         self.logger = logging.getLogger(__name__)
         self.bot = bot
-
-        ClientXMPP.__init__(self, jabberDetails['jabber_id'], jabberDetails['password'])
-
-        self.relay_from = jabberDetails['relay_from']
-        self.channel = self.bot.get_channel(jabberDetails['channel'])      
+        self.relay_from = jabber_server['relay_from']
+        self.channel = self.bot.get_channel(jabber_server['channel'])
 
         self.add_event_handler('session_start', self.start)
         if self.connect():
             self.process()
-        
+
         self.add_event_handler('message', self.message)
 
-    def start(self, event):
+    def start(self, dummy_event):
+        'Follow standard xmpp protocol after connecting to the server'
         self.send_presence(ptype='away')
         self.get_roster()
 
     async def message(self, msg):
+        'Relay messages from specified senders to specified discord channel'
         sender = msg['from'].bare
-        if sender == self.relay_from:
+        if sender in self.relay_from:
             self.logger.info('Relaying message from %s', sender)
-            r_message = '@everyone\n```BROADCAST FROM: {}\n\n{}```'.format(sender, msg['body'])
+            r_message = '@everyone\n```{}```'.format(msg['body'])
             await self.bot.send_message(self.channel, r_message)
         else:
             self.logger.info('Ignored message from %s', sender)
