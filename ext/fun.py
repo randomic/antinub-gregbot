@@ -56,18 +56,23 @@ class Fun:
         if self.guess_number:
             response += '\n  \u2714 Guessing game currently active'
         else:
-            response += '\n  \u2714 No guessing game currently active'
+            response += '\n  \u2716 No guessing game currently active'
         return response
 
     @commands.command()
     async def meme(self, memename: str, imglink: str=""):
         '''Posts a saved imgur link via a specified name
-        or saves an imgur link to file under the name'''
+        or saves an imgur link to file under the name.
+        Converts all memenames to lower case'''
         self.memelist = self.loadjson('memes.json')
+        memename = memename.lower()
         if memename in self.memelist['memes'].keys():
-            self.logger.info('KappaPride')
-            await self.bot.say(self.memelist['memes'].get(memename))
-            self.logger.info('User posted %s to the chat', memename)
+            if imglink != "":
+                await self.bot.say("Meme '%s' already exists!" % memename)
+                self.logger.info("User tried to overwrite a meme")
+            else:
+                await self.bot.say(self.memelist['memes'].get(memename))
+                self.logger.info('User posted %s to the chat', memename)
         elif imglink != "":
             self.memelist['memes'][memename] = imglink
             self.savejson(self.memelist, 'memes.json')
@@ -80,6 +85,7 @@ class Fun:
     async def removememe(self, memename: str):
         '''Removes a meme from file via the specific memename'''
         self.memelist = self.loadjson('memes.json')
+        memename = memename.lower()
         if memename in self.memelist['memes'].keys():
             del self.memelist['memes'][memename]
             self.logger.info('User removed %s from memes.json', memename)
@@ -88,6 +94,16 @@ class Fun:
         else:
             self.logger.warning('User entered invalid memename "%s"', memename)
             await self.bot.say('You entered an invalid memename.')
+
+    @commands.command()
+    async def listmemes(self):
+        '''Posts a list of the current memes available in the file'''
+        memelist = self.loadjson('memes.json')['memes']
+        response = "**Memes:**\n```"
+        for key in sorted(memelist.keys()):
+            response += "{}:\n  {}\n".format(key, memelist[key])
+        response += "```"
+        await self.bot.say(response)
 
     @commands.command(pass_context=True)
     async def guess(self, ctx, guess: int=0):
@@ -112,6 +128,8 @@ class Fun:
             if guess < 1:
                 guess = 1000
             self.guess_number = randint(1, guess)
+            self.logger.info('New game started from 1-%s. The number is %s.',
+                             guess, self.guess_number)
             self.guess_max = guess
             await self.bot.say('New game started! Guess the number '
                                + 'between 1 and {}'.format(guess))
