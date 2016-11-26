@@ -6,7 +6,6 @@ Contains several useless but fun commands
 import logging
 from random import randint
 import json
-from os.path import isfile
 
 import discord.ext.commands as commands
 
@@ -46,19 +45,6 @@ class Fun:
         except TypeError as error:
             self.logger.error(error)
 
-    def get_status(self):
-        'Returns a string describing the status of this cog'
-        response = ""
-        if isfile('memes.json'):
-            response += '\n  \u2714 memes.json exists, memes != dreams'
-        else:
-            response += '\n  \u2716 No meme file found'
-        if self.guess_number:
-            response += '\n  \u2714 Guessing game currently active'
-        else:
-            response += '\n  \u2714 No guessing game currently active'
-        return response
-
     @commands.command()
     async def meme(self, memename: str, imglink: str=""):
         '''Posts a saved imgur link via a specified name
@@ -71,23 +57,10 @@ class Fun:
         elif imglink != "":
             self.memelist['memes'][memename] = imglink
             self.savejson(self.memelist, 'memes.json')
-            await self.bot.say('`{}` added as `{}`!'.format(imglink, memename))
+            await self.bot.say('"<{}>" added as {}!'.format(imglink, memename))
         else:
             await self.bot.say('You entered an invalid meme name')
             self.logger.warning('User entered an invalid meme name')
-
-    @commands.command()
-    async def removememe(self, memename: str):
-        '''Removes a meme from file via the specific memename'''
-        self.memelist = self.loadjson('memes.json')
-        if memename in self.memelist['memes'].keys():
-            del self.memelist['memes'][memename]
-            self.logger.info('User removed %s from memes.json', memename)
-            await self.bot.say('%s removed from the memelist.' % memename)
-            self.savejson(self.memelist, 'memes.json')
-        else:
-            self.logger.warning('User entered invalid memename "%s"', memename)
-            await self.bot.say('You entered an invalid memename.')
 
     @commands.command(pass_context=True)
     async def guess(self, ctx, guess: int=0):

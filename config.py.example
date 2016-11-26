@@ -11,14 +11,11 @@ LOG_PATH = os.path.join(PROJECT_ROOT, 'log')
 
 TOKEN = 'my token'
 OWNER_ID = 'owner id here' # The ID of the person the bot should listen to for sensitive commands.
-BOT_ID = 'bot id here'
 
 # Extremely verbose logging when true.
 DEBUG = False
 # If your network has difficulties with IPv6 you will need to set this to True
 FORCE_IPV4 = False
-# Displays a message under the bots name in discord
-BOT_STATUS = "KappaPride"
 
 # util extension is considered essential and will be automatically loaded first
 STARTUP_EXTENSIONS = [
