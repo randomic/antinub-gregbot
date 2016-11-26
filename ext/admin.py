@@ -30,16 +30,16 @@ class Admin:
     def __init__(self, bot):
         self.logger = logging.getLogger(__name__)
         self.bot = bot
-
+    
     def loadjson(self, jsonname):
         try:
             with open(jsonname) as data_file:
                 data = json.load(data_file)
-                self.logger.info('Json successfully loaded.')
             return data
+            self.logger.info('Json successfully loaded.')
         except FileNotFoundError:
             return {'admins' : []}
-
+    
     def savejson(self, data, jsonname):
         try:
             with open(jsonname, 'wt') as outfile:
@@ -47,7 +47,12 @@ class Admin:
             self.logger.info('Json successfully saved.')
         except TypeError as e:
             self.logger.error(e)
+    
 
+    
+    async def on_command_error(self, exception, context):
+            self.logger.debug(type(exception))
+    
     @commands.command()
     @commands.check(isOwner)
     async def addadmin(self, ID : str):
@@ -61,7 +66,7 @@ class Admin:
         else:
             self.logger.warning('User entered invalid ID.')
             await self.bot.say('You entered an invalid ID.')
-
+    
     @commands.command()
     @commands.check(isOwner)
     async def removeadmin(self, ID : str):
@@ -75,7 +80,7 @@ class Admin:
         else:
             self.logger.warning('User entered invalid ID: %s', ID)
             await self.bot.say('You entered an invalid ID.')
-
+    
     @commands.command()
     @commands.check(isAdmin)
     async def listadmins(self):
@@ -84,14 +89,14 @@ class Admin:
         self.logger.info('User listed admin ID\'s')
         await self.bot.say('**-------- ADMINS --------**')
         for admin in self.data['admins']:
-            try:
+            try: 
                 user = await self.bot.get_user_info(admin)
                 self.logger.info("%s - %s", user.name, user.id)
                 await self.bot.say('**User:** %s, **ID:** %s' % (user.name, user.id))
             except discord.errors.NotFound as e:
                 self.logger.info('NotFound - %s', admin)
                 await self.bot.say('**User:** NotFound (Is this a valid ID?), **ID:** %s' % admin)
-
+                
     @commands.command()
     @commands.check(isAdmin)
     async def isadmin(self):
