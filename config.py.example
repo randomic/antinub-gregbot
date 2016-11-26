@@ -9,8 +9,11 @@ import os
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 LOG_PATH = os.path.join(PROJECT_ROOT, 'log')
 
+# The token for the bot, taken from the discord application page
 TOKEN = 'my token'
-OWNER_ID = 'owner id here' # The ID of the person the bot should listen to for sensitive commands.
+# The user ID of the person the bot should listen to for sensitive commands.
+OWNER_ID = 'owner id here'
+# The user ID of the bot
 BOT_ID = 'bot id here'
 
 # Extremely verbose logging when true.
