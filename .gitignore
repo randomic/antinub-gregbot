@@ -94,5 +94,4 @@ ENV/
 
 # Rope project settings
 .ropeproject
-fleetlist.json
-memes.json
+*.json
