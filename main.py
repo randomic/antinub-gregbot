@@ -7,6 +7,8 @@ import logging
 from logging.handlers import RotatingFileHandler
 import os
 from socket import AF_INET
+from discord import Game
+from discord import Status
 
 import discord.ext.commands as commands
 from aiohttp import TCPConnector
@@ -68,16 +70,19 @@ def _create_bot():
     logger.info('Starting up bot')
     socket_family = AF_INET if config.FORCE_IPV4 else 0
     custom_connector = TCPConnector(family=socket_family)
-    return commands.Bot('!', connector=custom_connector), logger
+    return commands.Bot('<@'+config.BOT_ID+'> ', connector=custom_connector), logger
 
 
 if __name__ == '__main__':
     BOT, LOGGER = _create_bot()
+
 
     @BOT.listen()
     async def on_ready():
         'Note in log when the bot is ready'
         LOGGER.info('Logged in as %s, id: %s', BOT.user.name, BOT.user.id)
         _load_extensions(BOT)
+        status = Game(name=config.BOT_STATUS)
+        await BOT.change_presence(game=status, status=Status.dnd)
 
     BOT.run(config.TOKEN)
