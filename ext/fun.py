@@ -5,6 +5,7 @@ Contains several useless but fun commands
 '''
 import logging
 from random import randint
+import json
 
 import discord.ext.commands as commands
 
@@ -21,16 +22,48 @@ class Fun:
         self.bot = bot
         self.guess_number = 0
         self.guess_max = 0
+        self.memelist = ""
+
+    def loadjson(self, jsonname):
+        'A function which loads a json, given the filename'
+        try:
+            with open(jsonname) as data_file:
+                data = json.load(data_file)
+            self.logger.info('Json successfully loaded.')
+            return data
+        except FileNotFoundError:
+            return {
+                "memes": []
+            }
+
+    def savejson(self, data, jsonname):
+        'A function which saves a json, given the filename'
+        try:
+            with open(jsonname, 'wt') as outfile:
+                json.dump(data, outfile)
+            self.logger.info('Json successfully saved.')
+        except TypeError as error:
+            self.logger.error(error)
 
     @commands.command()
-    async def wopolusa(self):
-        '''Posts a picture of Wopolusa to the chat'''
-        await self.bot.say('http://i.imgur.com/wnwTGnf.png')
-
-    @commands.command()
-    async def stalin(self):
-        '''Posts a picture describing Stalin\'s limit'''
-        await self.bot.say('https://i.imgur.com/5ujkkrz.gifv')
+    async def meme(self, memename: str, imglink: str=""):
+        '''Posts a saved imgur link via a specified name
+        or saves an imgur link to file under the name'''
+        self.memelist = self.loadjson('memes.json')
+        if any(memename in x for x in self.memelist['memes']):
+            self.logger.info('KappaPride')
+            self.logger.info(self.memelist['memes'][memename])
+            await self.bot.say(self.memelist['memes'][memename].get(memename))
+            self.logger.info('User posted %s to the chat', memename)
+        elif imglink != "":
+            self.memelist['memes'].append({
+                memename: imglink
+            })
+            self.savejson(self.memelist, 'memes.json')
+            await self.bot.say('"{}" added as {}!'.format(imglink, memename))
+        else:
+            await self.bot.say('You entered an invalid meme name')
+            self.logger.warning('User entered an invalid meme name')
 
     @commands.command(pass_context=True)
     async def guess(self, ctx, guess: int=0):
