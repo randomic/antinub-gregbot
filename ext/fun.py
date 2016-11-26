@@ -33,7 +33,7 @@ class Fun:
             return data
         except FileNotFoundError:
             return {
-                "memes": []
+                "memes": {}
             }
 
     def savejson(self, data, jsonname):
@@ -50,17 +50,14 @@ class Fun:
         '''Posts a saved imgur link via a specified name
         or saves an imgur link to file under the name'''
         self.memelist = self.loadjson('memes.json')
-        if any(memename in x for x in self.memelist['memes']):
+        if memename in self.memelist['memes'].keys():
             self.logger.info('KappaPride')
-            self.logger.info(self.memelist['memes'][memename])
-            await self.bot.say(self.memelist['memes'][memename].get(memename))
+            await self.bot.say(self.memelist['memes'].get(memename))
             self.logger.info('User posted %s to the chat', memename)
         elif imglink != "":
-            self.memelist['memes'].append({
-                memename: imglink
-            })
+            self.memelist['memes'][memename] = imglink
             self.savejson(self.memelist, 'memes.json')
-            await self.bot.say('"{}" added as {}!'.format(imglink, memename))
+            await self.bot.say('"<{}>" added as {}!'.format(imglink, memename))
         else:
             await self.bot.say('You entered an invalid meme name')
             self.logger.warning('User entered an invalid meme name')
