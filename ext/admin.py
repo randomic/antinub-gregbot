@@ -33,9 +33,7 @@ class Admin:
         self.logger = logging.getLogger(__name__)
         self.bot = bot
 
-    def get_status(self):
-        'Returns a string describing the status of this cog'
-        return '\n  \u2714 Cog loaded, ready to use'
+    get_status = '\n  \u2714 Cog loaded, ready to use'
 
     def get_memberobj(self, context, user):
         '''A function which returns either a member object of the given

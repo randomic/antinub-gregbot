@@ -124,6 +124,8 @@ class Control:
                 cog = self.bot.cogs[name]
                 try:
                     report = cog.get_status()
+                except TypeError:
+                    report = cog.get_status
                 except AttributeError as exc:
                     self.logger.warning(exc)
                     continue
