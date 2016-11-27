@@ -16,12 +16,14 @@ def setup(bot):
 
 def is_admin(context):
     'Check whether or not the user is an admin of the server'
-    top_role = str(context.message.author.top_role)
+    role_list = context.message.author.roles
     admin_role = "admin"
     if is_owner(context):
         return True
     else:
-        return top_role == admin_role
+        for role in role_list:
+            if role.name == admin_role:
+                return True
 
 
 class Admin:
@@ -40,7 +42,6 @@ class Admin:
         ID/User or None if it cannot get it'''
         if context.message.server is not None:
             server = context.message.server
-            self.logger.info('Kappa1')
             if user.isdecimal():
                 self.logger.info('User entered valid ID: %s', user)
                 return server.get_member(user)
@@ -93,3 +94,9 @@ class Admin:
                     roleobj = role
             await self.bot.remove_roles(member, roleobj)
             await self.bot.say('%s demoted from admin!' % demotee)
+
+    @commands.command()
+    @commands.check(is_admin)
+    async def isadmin(self):
+        '''Checks if the user is an admin'''
+        await self.bot.say('Congrats, you\'re an admin.')
