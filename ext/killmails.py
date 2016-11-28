@@ -60,7 +60,9 @@ class Killmails:
             relevancy_string = self.is_relevant(package)
             if relevancy_string:
                 kill_id = package['killID']
-                message = '**{}**\n  '.format(relevancy_string)
+                kill_system = package['killmail']['solarSystem']['name']
+                message = '**Victim: {}**\n'.format(relevancy_string)
+                message += 'System: {}\n'.format(kill_system)
                 message += 'https://zkillboard.com/kill/{}/'.format(kill_id)
                 await self.bot.send_message(self.channel, message)
                 self.logger.info('Posted a killmail')
