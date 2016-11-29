@@ -5,6 +5,7 @@ Contains several commands useful for controlling/debugging the bot
 '''
 import logging
 import os
+from ext.groupcheck import is_admin, is_director
 from collections import deque
 
 import discord.ext.commands as commands
@@ -18,11 +19,6 @@ def setup(bot):
 
 
 # Helper functions
-def is_owner(context):
-    'Check whether or not the user is the owner of the bot'
-    return context.message.author.id == config.OWNER_ID
-
-
 def paginate(string, formatting='```', max_length=2000, sep='\n', trim=True):
     'Chops a string into even chunks of max_length around the given separator'
     max_size = max_length - 2*len(formatting) + len(sep)
@@ -62,7 +58,7 @@ class Control:
             logger.exception(exception)
 
     @commands.command()
-    @commands.check(is_owner)
+    @commands.check(is_admin)
     async def stop(self):
         'Logs the bot out of discord and stops it'
         self.logger.info('Unloading extensions')
@@ -74,7 +70,7 @@ class Control:
         await self.bot.logout()
 
     @commands.command()
-    @commands.check(is_owner)
+    @commands.check(is_admin)
     async def log(self, logname: str='error', n_lines: int=10):
         'The bot posts the last n (default 10) lines of the specified logfile'
         try:
@@ -112,7 +108,7 @@ class Control:
             return '\n  \u2716 Bot is not currently logged in'
 
     @commands.command()
-    @commands.check(is_owner)
+    @commands.check(is_director)
     async def status(self, *args: str):
         'Returns the status of the named cog'
         if len(args) == 0:
@@ -137,7 +133,7 @@ class Control:
             await self.bot.say(page)
 
     @commands.group(pass_context=True)
-    @commands.check(is_owner)
+    @commands.check(is_admin)
     async def ext(self, ctx):
         'Group of commands regarding loading and unloading of extensions'
         if ctx.invoked_subcommand is None:
