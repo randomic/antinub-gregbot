@@ -4,10 +4,8 @@ import datetime
 import json
 from operator import itemgetter
 from os.path import isfile
-from ext.groupcheck import is_admin, is_director, is_respected
+import ext.permcheck as permcheck
 import discord.ext.commands as commands
-
-from util import is_owner
 
 
 def setup(bot):
@@ -71,7 +69,7 @@ class Timerboard:
             return '\n  \u2716 No fleetlist file found'
 
     @commands.command()
-    @commands.check(is_director)
+    @permcheck.three()
     async def addfleet(self, fdate: str, ftime: str, flco: str,
                        formup: str, doct: str, ftype: str):
         '''Adds a fleet to the list of fleets in the json.
@@ -96,7 +94,7 @@ class Timerboard:
             await self.bot.say("Fleet successfully added!")
 
     @commands.command()
-    @commands.check(is_director)
+    @permcheck.three()
     async def removefleet(self, number: str):
         'Removes a fleet from the json via number on the list of fleets'
         self.fleetjson = self.loadjson("fleetlist.json")
@@ -114,17 +112,22 @@ class Timerboard:
             await self.bot.say("Please enter an integer.")
 
     @commands.command()
-    @commands.command(is_respected)
+    @permcheck.two()
     async def listfleets(self):
         'Lists all fleets to the chat in discord'
         fleets = self.loadjson("fleetlist.json")['fleets']
         n_fleets = len(fleets)
         self.logger.info(fleets)
+        listedfleets = 0
         for idx in range(n_fleets):
-            await self.bot.say(self.listfleet(idx))
+            if self.listfleet(idx) != []:
+                await self.bot.say(self.listfleet(idx))
+                listedfleets += 1
+        if listedfleets == 0:
+            await self.bot.say('No fleets to list.')
 
     @commands.command()
-    @commands.check(is_director)
+    @permcheck.three()
     async def announcefleets(self):
         'Announces all un-announced fleets'
         self.fleetjson = self.loadjson("fleetlist.json")
@@ -140,7 +143,7 @@ class Timerboard:
             await self.bot.say("All Fleets Announced!")
 
     @commands.command()
-    @commands.check(is_admin)
+    @permcheck.four()
     async def resetannouncefleets(self, number: str):
         '''Resets the boolean specifying whether a fleet has been announced.
         Enter a fleet number to reset a specific fleet or "all" to reset all'''
