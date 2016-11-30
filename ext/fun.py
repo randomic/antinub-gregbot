@@ -7,7 +7,7 @@ import logging
 from random import randint
 import json
 from os.path import isfile
-from ext.groupcheck import is_member, is_respected
+import ext.permcheck as permcheck
 
 import discord.ext.commands as commands
 
@@ -61,7 +61,7 @@ class Fun:
         return response
 
     @commands.command()
-    @commands.command(is_member)
+    @permcheck.one()
     async def meme(self, memename: str, imglink: str=""):
         '''Posts a saved imgur link via a specified name
         or saves an imgur link to file under the name.
@@ -84,7 +84,7 @@ class Fun:
             self.logger.warning('User entered an invalid meme name')
 
     @commands.command()
-    @commands.command(is_respected)
+    @permcheck.one()
     async def removememe(self, memename: str):
         '''Removes a meme from file via the specific memename'''
         self.memelist = self.loadjson('memes.json')
@@ -99,7 +99,7 @@ class Fun:
             await self.bot.say('You entered an invalid memename.')
 
     @commands.command()
-    @commands.check(is_member)
+    @permcheck.one()
     async def listmemes(self):
         '''Posts a list of the current memes available in the file'''
         memelist = self.loadjson('memes.json')['memes']
@@ -110,7 +110,6 @@ class Fun:
         await self.bot.say(response)
 
     @commands.command(pass_context=True)
-    @commands.check(is_member)
     async def guess(self, ctx, guess: int=0):
         '''Allows the user to guess a number. If there is no number to guess a
         new game is started'''
@@ -138,3 +137,9 @@ class Fun:
             self.guess_max = guess
             await self.bot.say('New game started! Guess the number '
                                + 'between 1 and {}'.format(guess))
+
+    @commands.command()
+    async def emoji(self, emoji: str, number: int=1):
+        'Converts a string to :string: aka an emoji'
+        emoji = ":" + emoji + ":"
+        await self.bot.say((emoji*number))
