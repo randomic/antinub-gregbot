@@ -57,6 +57,7 @@ JABBER = {
     ]
 }
 
+PERMCHECK = {
     'servers': {
         'your_server_id_here': {
             'groups': {
