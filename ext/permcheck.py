@@ -192,8 +192,23 @@ class Permcheck:
                 await self.bot.say('I have insufficent roles to demote on '
                                    + 'this server.')
 
-    @commands.command()
-    @four()
-    async def isadmin(self):
-        '''Checks if the user is an admin'''
-        await self.bot.say('Congrats, you\'re an admin.')
+    @commands.command(pass_context=True)
+    async def permlevel(self, ctx):
+        '''Displays the users level of permission'''
+        role_list = ctx.message.author.roles
+        server_id = ctx.message.server.id
+        groups = config.PERMCHECK['servers'][server_id]['groups']
+        userrole_list = []
+        response = "Your permission level is "
+        if ctx.message.author.id == config.OWNER_ID:
+            response += '5'
+        else:
+            for role in role_list:
+                if role.name in groups:
+                    userrole_list.append(groups[role.name])
+            if userrole_list != []:
+                userrole_list = sorted(userrole_list, key=int, reverse=True)
+                response += str(userrole_list[0])
+            else:
+                response = 'You don\'t have any permissions on this server.'
+        await self.bot.say(response)
