@@ -1,12 +1,13 @@
 '''Fuck that default checker, we need our own! - Ninja for no reason'''
 import logging
 import config
+from discord import Forbidden
 import discord.ext.commands as commands
 
 
 def setup(bot):
     'Adds the cog to the provided discord bot'
-    bot.add_cog(GroupManagement(bot))
+    bot.add_cog(Permcheck(bot))
 
 
 def five():
@@ -104,7 +105,7 @@ def one():
     return commands.check(predicate)
 
 
-class GroupManagement:
+class Permcheck:
     '''A cog defining commands regarding group management
     and group checks'''
     def __init__(self, bot):
@@ -144,13 +145,20 @@ class GroupManagement:
             roleobj = None
             server = ctx.message.server
             for serverrole in server.roles:
-                if role.name == role:
+                if serverrole.name == role:
                     roleobj = serverrole
+                    self.logger.info('Role located')
             if roleobj is None:
                 await self.bot.say('Role not found on the server.')
                 self.logger.warning('User entered an invalid role.')
-            await self.bot.add_roles(member, roleobj)
-            await self.bot.say('%s promoted to %s!' % promotee, role)
+            try:
+                await self.bot.add_roles(member, roleobj)
+                await self.bot.say('{} promoted to {}'.format(promotee, role))
+            except Forbidden:
+                self.logger.warning('User tried to promote but the bot has '
+                                    + 'insufficent roles on the server.')
+                await self.bot.say('I have insufficent roles to promote on '
+                                   + 'this server.')
 
     @commands.command(pass_context=True)
     @five()
@@ -169,13 +177,20 @@ class GroupManagement:
             roleobj = None
             server = ctx.message.server
             for serverrole in server.roles:
-                if role.name == role:
+                if serverrole.name == role:
                     roleobj = serverrole
+                    self.logger.info('Role located')
             if roleobj is None:
                 await self.bot.say('Role not found on the server.')
                 self.logger.warning('User entered an invalid role.')
-            await self.bot.remove_roles(member, roleobj)
-            await self.bot.say('%s demoted from %s!' % demotee, role)
+            try:
+                await self.bot.add_roles(member, roleobj)
+                await self.bot.say('{} demoted from {}'.format(demotee, role))
+            except Forbidden:
+                self.logger.warning('User tried to demote but the bot has '
+                                    + 'insufficent roles on the server.')
+                await self.bot.say('I have insufficent roles to demote on '
+                                   + 'this server.')
 
     @commands.command()
     @four()
