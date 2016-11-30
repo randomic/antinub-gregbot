@@ -56,3 +56,21 @@ JABBER = {
         }
     ]
 }
+
+    'servers': {
+        'your_server_id_here': {
+            'groups': {
+                'admin': 4,
+                'director': 3,
+                'respected': 2,
+                'member': 1
+            }
+        },
+        'another_server_id_here': {
+            'groups': {
+                'director': 3,
+                'respected': 2
+            }
+        }
+    }
+}
