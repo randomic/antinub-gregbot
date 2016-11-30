@@ -139,6 +139,7 @@ class Fun:
                                + 'between 1 and {}'.format(guess))
 
     @commands.command()
+    @permcheck.two()
     async def emoji(self, emoji: str, number: int=1):
         'Converts a string to :string: aka an emoji'
         emoji = ":" + emoji + ":"
