@@ -15,7 +15,7 @@ def five():
         'By god, I think I did it'
         role_list = ctx.message.author.roles
         server_id = ctx.message.server.id
-        groups = config.UTIL['servers'][server_id]['groups']
+        groups = config.PERMCHECK['servers'][server_id]['groups']
         if ctx.message.author.id == config.OWNER_ID:
             return True
         else:
@@ -34,7 +34,7 @@ def four():
         'By god, I think I did it'
         role_list = ctx.message.author.roles
         server_id = ctx.message.server.id
-        groups = config.UTIL['servers'][server_id]['groups']
+        groups = config.PERMCHECK['servers'][server_id]['groups']
         if ctx.message.author.id == config.OWNER_ID:
             return True
         else:
@@ -53,7 +53,7 @@ def three():
         'By god, I think I did it'
         role_list = ctx.message.author.roles
         server_id = ctx.message.server.id
-        groups = config.UTIL['servers'][server_id]['groups']
+        groups = config.PERMCHECK['servers'][server_id]['groups']
         if ctx.message.author.id == config.OWNER_ID:
             return True
         else:
@@ -72,7 +72,7 @@ def two():
         'By god, I think I did it'
         role_list = ctx.message.author.roles
         server_id = ctx.message.server.id
-        groups = config.UTIL['servers'][server_id]['groups']
+        groups = config.PERMCHECK['servers'][server_id]['groups']
         if ctx.message.author.id == config.OWNER_ID:
             return True
         else:
@@ -91,7 +91,7 @@ def one():
         'By god, I think I did it'
         role_list = ctx.message.author.roles
         server_id = ctx.message.server.id
-        groups = config.UTIL['servers'][server_id]['groups']
+        groups = config.PERMCHECK['servers'][server_id]['groups']
         if ctx.message.author.id == config.OWNER_ID:
             return True
         else:
