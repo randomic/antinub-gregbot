@@ -143,3 +143,16 @@ class Fun:
         'Converts a string to :string: aka an emoji'
         emoji = ":" + emoji + ":"
         await self.bot.say((emoji*number))
+
+    @commands.command()
+    async def lmgtfy(self, *args):
+        'Googles the input for the mentally impaired'
+        response = "https://lmgtfy.com/?q="
+        count = 0
+        for arg in args:
+            if count != 0:
+                response += "+"
+            response += arg
+            count += 1
+        await self.bot.say(response)
+        self.logger.info('User posted a lmgtfy to the chat.')
