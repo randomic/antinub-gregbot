@@ -7,9 +7,6 @@ the given channel.
 from asyncio import sleep
 import logging
 
-import ext.permcheck as permcheck
-import discord.ext.commands as commands
-
 from aiohttp import ClientError
 from discord.compat import create_task
 
@@ -39,11 +36,10 @@ class Killmails:
 
         self.start_listening()
 
-    def get_status(self):
     def get_health(self):
         'Returns a string describing the status of this cog'
         if self.listening:
-            return '\n  \u2714 Listening for corp id: {}'.format(self.corp_id)
+            return '\n  \u2714 Listening'
         else:
             return '\n  \u2716 Not listening'
 
@@ -99,20 +95,4 @@ class Killmails:
         create_task(self._run_listen_loop())
 
     def __unload(self):
-        self.listening = False
-
-    @commands.group(pass_context=True)
-    @permcheck.four()
-    async def killmails(self, ctx):
-        '''Group of commands regarding stopping and starting
-        of killmail scraping'''
-        if ctx.invoked_subcommand is None:
-            await self.bot.say(self.bot.extensions.keys())
-
-    async def start(self):
-        'Attempts to start the task of checking for new killmails'
-        self.start_listening
-
-    async def stop(self):
-        'Stops the task of checking for new killmails'
         self.listening = False
