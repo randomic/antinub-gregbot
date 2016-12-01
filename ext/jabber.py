@@ -34,7 +34,7 @@ class Jabber:
         for server in self.xmpp_servers:
             self.xmpp_relays.append(XmppRelay(self.bot, server))
 
-    def get_status(self):
+    def get_health(self):
         'Returns a string describing the status of this cog'
         if self.xmpp_relays:
             response = ''

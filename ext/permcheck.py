@@ -112,7 +112,9 @@ class Permcheck:
         self.logger = logging.getLogger(__name__)
         self.bot = bot
 
-    get_status = '\n  \u2714 Cog loaded, ready to use'
+    def get_health(self):
+        'Returns a string describing the status of this cog'
+        return '\n  \u2714 Loaded'
 
     def get_memberobj(self, context, user):
         '''A function which returns either a member object of the given
