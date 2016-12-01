@@ -47,7 +47,7 @@ class Fun:
         except TypeError as error:
             self.logger.error(error)
 
-    def get_status(self):
+    def get_health(self):
         'Returns a string describing the status of this cog'
         response = ""
         if isfile('memes.json'):

@@ -99,7 +99,7 @@ class Control:
         except FileNotFoundError:
             await self.bot.say('Specified log file does not exist')
 
-    def get_status(self):
+    def get_health(self):
         'Returns a string describing the status of this cog'
         if self.bot.is_logged_in:
             return '\n  \u2714 Logged in as {}, id: {}'.format(
@@ -109,7 +109,7 @@ class Control:
 
     @commands.command()
     @permcheck.four()
-    async def status(self, *args: str):
+    async def healthcheck(self, *args: str):
         'Returns the status of the named cog'
         if len(args) == 0:
             args = self.bot.cogs
@@ -119,13 +119,10 @@ class Control:
             if name in self.bot.cogs:
                 cog = self.bot.cogs[name]
                 try:
-                    report = cog.get_status()
-                except TypeError:
-                    report = cog.get_status
+                    report = cog.get_health()
+                    response += '{}: {}\n'.format(name, report)
                 except AttributeError as exc:
                     self.logger.warning(exc)
-                    continue
-                response += '{}: {}\n'.format(name, report)
             else:
                 response += '{}:\n  \u2716 No such extension\n'.format(name)
 

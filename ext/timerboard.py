@@ -3,17 +3,10 @@ import logging
 import datetime
 import json
 from operator import itemgetter
-<<<<<<< HEAD
 from os.path import isfile
 import ext.permcheck as permcheck
 import discord.ext.commands as commands
 
-=======
-import discord.ext.commands as commands
-
-from ext.util import isOwner
-
->>>>>>> fd61c32e0b220ee1a760bd8ebde20c225364b943
 
 def setup(bot):
     'Adds the cog to the provided discord bot'
@@ -58,12 +51,8 @@ class Timerboard:
             response += "@everyone\n"
         fleet = fleets[index]
         response += "**Fleet {}:**\n".format(index+1)
-<<<<<<< HEAD
         ftime = datetime.datetime.strptime(fleet["fleettime"],
                                            '%Y-%m-%dT%H:%M:%S')
-=======
-        ftime = datetime.datetime.strptime(fleet["fleettime"], '%Y-%m-%dT%H:%M:%S')
->>>>>>> fd61c32e0b220ee1a760bd8ebde20c225364b943
         response += "```When: {}\n".format(ftime)
         response += "FC: {}\n".format(fleet["fc"])
         response += "Type: {}\n".format(fleet['fleettype'])
@@ -72,8 +61,7 @@ class Timerboard:
         self.logger.info(response)
         return response
 
-<<<<<<< HEAD
-    def get_status(self):
+    def get_health(self):
         '''Returns a string describing the status of this cog'''
         if isfile('fleetlist.json'):
             return '\n  \u2714 fleetlist.json exists'
@@ -84,11 +72,6 @@ class Timerboard:
     @permcheck.three()
     async def addfleet(self, fdate: str, ftime: str, flco: str,
                        formup: str, doct: str, ftype: str):
-=======
-    @commands.command()
-    @commands.check(isOwner)
-    async def addfleet(self, fdate: str, ftime: str, flco: str, formup: str, doct: str, ftype: str):
->>>>>>> fd61c32e0b220ee1a760bd8ebde20c225364b943
         '''Adds a fleet to the list of fleets in the json.
         Input fleets in the format
         "DD/MM/YYYY HH/MM FC FORMUP DOCTRINE FLEETTYPE'''
@@ -111,11 +94,7 @@ class Timerboard:
             await self.bot.say("Fleet successfully added!")
 
     @commands.command()
-<<<<<<< HEAD
     @permcheck.three()
-=======
-    @commands.check(isOwner)
->>>>>>> fd61c32e0b220ee1a760bd8ebde20c225364b943
     async def removefleet(self, number: str):
         'Removes a fleet from the json via number on the list of fleets'
         self.fleetjson = self.loadjson("fleetlist.json")
@@ -133,16 +112,12 @@ class Timerboard:
             await self.bot.say("Please enter an integer.")
 
     @commands.command()
-<<<<<<< HEAD
     @permcheck.two()
-=======
->>>>>>> fd61c32e0b220ee1a760bd8ebde20c225364b943
     async def listfleets(self):
         'Lists all fleets to the chat in discord'
         fleets = self.loadjson("fleetlist.json")['fleets']
         n_fleets = len(fleets)
         self.logger.info(fleets)
-<<<<<<< HEAD
         listedfleets = 0
         for idx in range(n_fleets):
             if self.listfleet(idx) != []:
@@ -153,13 +128,6 @@ class Timerboard:
 
     @commands.command()
     @permcheck.three()
-=======
-        for idx in range(n_fleets):
-            await self.bot.say(self.listfleet(idx))
-
-    @commands.command()
-    @commands.check(isOwner)
->>>>>>> fd61c32e0b220ee1a760bd8ebde20c225364b943
     async def announcefleets(self):
         'Announces all un-announced fleets'
         self.fleetjson = self.loadjson("fleetlist.json")
@@ -175,11 +143,7 @@ class Timerboard:
             await self.bot.say("All Fleets Announced!")
 
     @commands.command()
-<<<<<<< HEAD
     @permcheck.four()
-=======
-    @commands.check(isOwner)
->>>>>>> fd61c32e0b220ee1a760bd8ebde20c225364b943
     async def resetannouncefleets(self, number: str):
         '''Resets the boolean specifying whether a fleet has been announced.
         Enter a fleet number to reset a specific fleet or "all" to reset all'''
@@ -197,10 +161,6 @@ class Timerboard:
             await self.bot.say("All anouncement statuses reset.")
             self.logger.info('User reset all announcement statuses')
         else:
-<<<<<<< HEAD
             error = "Enter a valid number to reset or 'all' to reset all"
             await self.bot.say(error)
-=======
-            await self.bot.say("Please enter a valid number to reset or 'all' to reset all")
->>>>>>> fd61c32e0b220ee1a760bd8ebde20c225364b943
             self.logger.warning('User entered an invalid number to reset.')

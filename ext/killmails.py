@@ -40,6 +40,7 @@ class Killmails:
         self.start_listening()
 
     def get_status(self):
+    def get_health(self):
         'Returns a string describing the status of this cog'
         if self.listening:
             return '\n  \u2714 Listening for corp id: {}'.format(self.corp_id)
