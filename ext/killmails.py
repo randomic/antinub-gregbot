@@ -101,7 +101,7 @@ class Killmails:
         self.listening = False
 
     @commands.group(pass_context=True)
-    @permcheck.four()
+    @permcheck.check(4)
     async def killmails(self, ctx):
         '''Group of commands regarding stopping and starting
         of killmail scraping'''

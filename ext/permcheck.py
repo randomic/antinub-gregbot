@@ -10,97 +10,20 @@ def setup(bot):
     bot.add_cog(Permcheck(bot))
 
 
-def five():
+def check(level):
     'My re-write of the shitty check command'
     def predicate(ctx):
         'By god, I think I did it'
+        # if ctx.message.author.id == config.OWNER_ID:
+        #     return True
         role_list = ctx.message.author.roles
         server_id = ctx.message.server.id
         groups = config.PERMCHECK['servers'][server_id]['groups']
-        if ctx.message.author.id == config.OWNER_ID:
-            return True
-        else:
-            for role in role_list:
-                if role.name in groups:
-                    if groups[role.name] >= 5:
-                        return True
-            return False
-
-    return commands.check(predicate)
-
-
-def four():
-    'My re-write of the shitty check command'
-    def predicate(ctx):
-        'By god, I think I did it'
-        role_list = ctx.message.author.roles
-        server_id = ctx.message.server.id
-        groups = config.PERMCHECK['servers'][server_id]['groups']
-        if ctx.message.author.id == config.OWNER_ID:
-            return True
-        else:
-            for role in role_list:
-                if role.name in groups:
-                    if groups[role.name] >= 4:
-                        return True
-            return False
-
-    return commands.check(predicate)
-
-
-def three():
-    'My re-write of the shitty check command'
-    def predicate(ctx):
-        'By god, I think I did it'
-        role_list = ctx.message.author.roles
-        server_id = ctx.message.server.id
-        groups = config.PERMCHECK['servers'][server_id]['groups']
-        if ctx.message.author.id == config.OWNER_ID:
-            return True
-        else:
-            for role in role_list:
-                if role.name in groups:
-                    if groups[role.name] >= 3:
-                        return True
-            return False
-
-    return commands.check(predicate)
-
-
-def two():
-    'My re-write of the shitty check command'
-    def predicate(ctx):
-        'By god, I think I did it'
-        role_list = ctx.message.author.roles
-        server_id = ctx.message.server.id
-        groups = config.PERMCHECK['servers'][server_id]['groups']
-        if ctx.message.author.id == config.OWNER_ID:
-            return True
-        else:
-            for role in role_list:
-                if role.name in groups:
-                    if groups[role.name] >= 2:
-                        return True
-            return False
-
-    return commands.check(predicate)
-
-
-def one():
-    'My re-write of the shitty check command'
-    def predicate(ctx):
-        'By god, I think I did it'
-        role_list = ctx.message.author.roles
-        server_id = ctx.message.server.id
-        groups = config.PERMCHECK['servers'][server_id]['groups']
-        if ctx.message.author.id == config.OWNER_ID:
-            return True
-        else:
-            for role in role_list:
-                if role.name in groups:
-                    if groups[role.name] >= 1:
-                        return True
-            return False
+        for role in role_list:
+            if role.name in groups:
+                if groups[role.name] >= level:
+                    return True
+        return False
 
     return commands.check(predicate)
 
@@ -129,7 +52,7 @@ class Permcheck:
             return "PM"
 
     @commands.command(pass_context=True)
-    @five()
+    @check(5)
     async def promote(self, ctx, promotee: str, role: str):
         '''Command that promotes a user via ID or name to a role called
         "admin", given that it has the permissions and the role exists.
@@ -161,7 +84,7 @@ class Permcheck:
                                    + 'this server.')
 
     @commands.command(pass_context=True)
-    @five()
+    @check(5)
     async def demote(self, ctx, demotee: str, role: str):
         '''Command that demotes a user via ID or name from a role called
         "admin", given that it has the permissions and the role exists.

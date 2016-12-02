@@ -61,7 +61,7 @@ class Fun:
         return response
 
     @commands.command()
-    @permcheck.one()
+    @permcheck.check(1)
     async def meme(self, memename: str, imglink: str=""):
         '''Posts a saved imgur link via a specified name
         or saves an imgur link to file under the name.
@@ -84,7 +84,7 @@ class Fun:
             self.logger.warning('User entered an invalid meme name')
 
     @commands.command()
-    @permcheck.one()
+    @permcheck.check(1)
     async def removememe(self, memename: str):
         '''Removes a meme from file via the specific memename'''
         self.memelist = self.loadjson('memes.json')
@@ -99,7 +99,7 @@ class Fun:
             await self.bot.say('You entered an invalid memename.')
 
     @commands.command()
-    @permcheck.one()
+    @permcheck.check(1)
     async def listmemes(self):
         '''Posts a list of the current memes available in the file'''
         memelist = self.loadjson('memes.json')['memes']
@@ -139,7 +139,7 @@ class Fun:
                                + 'between 1 and {}'.format(guess))
 
     @commands.command()
-    @permcheck.two()
+    @permcheck.check(2)
     async def emoji(self, emoji: str, number: int=1):
         'Converts a string to :string: aka an emoji'
         emoji = ":" + emoji + ":"

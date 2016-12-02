@@ -69,7 +69,7 @@ class Timerboard:
             return '\n  \u2716 No fleetlist file found'
 
     @commands.command()
-    @permcheck.three()
+    @permcheck.check(4)
     async def addfleet(self, fdate: str, ftime: str, flco: str,
                        formup: str, doct: str, ftype: str):
         '''Adds a fleet to the list of fleets in the json.
@@ -94,7 +94,7 @@ class Timerboard:
             await self.bot.say("Fleet successfully added!")
 
     @commands.command()
-    @permcheck.three()
+    @permcheck.check(3)
     async def removefleet(self, number: str):
         'Removes a fleet from the json via number on the list of fleets'
         self.fleetjson = self.loadjson("fleetlist.json")
@@ -112,7 +112,7 @@ class Timerboard:
             await self.bot.say("Please enter an integer.")
 
     @commands.command()
-    @permcheck.two()
+    @permcheck.check(2)
     async def listfleets(self):
         'Lists all fleets to the chat in discord'
         fleets = self.loadjson("fleetlist.json")['fleets']
@@ -127,7 +127,7 @@ class Timerboard:
             await self.bot.say('No fleets to list.')
 
     @commands.command()
-    @permcheck.three()
+    @permcheck.check(3)
     async def announcefleets(self):
         'Announces all un-announced fleets'
         self.fleetjson = self.loadjson("fleetlist.json")
@@ -143,7 +143,7 @@ class Timerboard:
             await self.bot.say("All Fleets Announced!")
 
     @commands.command()
-    @permcheck.four()
+    @permcheck.check(4)
     async def resetannouncefleets(self, number: str):
         '''Resets the boolean specifying whether a fleet has been announced.
         Enter a fleet number to reset a specific fleet or "all" to reset all'''

@@ -58,7 +58,7 @@ class Control:
             logger.exception(exception)
 
     @commands.command()
-    @permcheck.five()
+    @permcheck.check(4)
     async def stop(self):
         'Logs the bot out of discord and stops it'
         self.logger.info('Unloading extensions')
@@ -70,7 +70,7 @@ class Control:
         await self.bot.logout()
 
     @commands.command()
-    @permcheck.four()
+    @permcheck.check(4)
     async def log(self, logname: str='error', n_lines: int=10):
         'The bot posts the last n (default 10) lines of the specified logfile'
         try:
@@ -108,7 +108,7 @@ class Control:
             return '\n  \u2716 Bot is not currently logged in'
 
     @commands.command()
-    @permcheck.four()
+    @permcheck.check(4)
     async def status(self, *args: str):
         'Returns the status of the named cog'
         if len(args) == 0:
@@ -133,7 +133,7 @@ class Control:
             await self.bot.say(page)
 
     @commands.group(pass_context=True)
-    @permcheck.four()
+    @permcheck.check(4)
     async def ext(self, ctx):
         'Group of commands regarding loading and unloading of extensions'
         if ctx.invoked_subcommand is None:
