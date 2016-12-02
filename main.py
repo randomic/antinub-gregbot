@@ -65,7 +65,7 @@ def _create_bot():
     # Create the bot
     socket_family = AF_INET if config.FORCE_IPV4 else 0
     custom_connector = TCPConnector(family=socket_family)
-    return commands.Bot(commands.when_mentioned,
+    return commands.Bot(commands.when_mentioned_or(*config.COMMAND_PREFIXES),
                         pm_help=True,
                         connector=custom_connector)
 

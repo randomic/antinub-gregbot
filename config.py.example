@@ -1,9 +1,9 @@
-"""
-Example bot settings for antinub-gregbot project.
+'''
+Bot settings for antinub-gregbot project.
 
 At minimum you will need to add your bot's oauth in TOKEN and your discord user
 ID in OWNER_ID so the bot only listens to you for volatile commands.
-"""
+'''
 import os
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -11,10 +11,11 @@ LOG_PATH = os.path.join(PROJECT_ROOT, 'log')
 
 # The token for the bot, taken from the discord application page
 TOKEN = 'my token'
-# The user ID of the person the bot should listen to for sensitive commands.
-OWNER_ID = 'owner id here'
-# The user ID of the bot
-BOT_ID = 'bot id here'
+# List of command prefixes the bot will pick up on in addition to whenever
+# it is mentioned (can be left empty to only listen for mentions)
+COMMAND_PREFIXES = ['!']
+# The user ID of the person the bot should listen to for sensitive commands
+OWNER_ID = 'bot owner id here'
 
 # Extremely verbose logging when true.
 DEBUG = False
