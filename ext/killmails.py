@@ -100,8 +100,10 @@ class Killmails:
             try:
                 rel = self.is_relevant(package)
             except KeyError as exc:
-                self.logger.warning(exc)
-                msgs = paginate('<@{}>\n{}'.format(OWNER_ID, str(package)))
+                self.logger.warning('%s\n\n%s', exc, package['killID'])
+                await self.bot.send_message(self.channel,
+                                            '<@{}>'.format(OWNER_ID))
+                msgs = paginate(str(package))
                 for msg in msgs:
                     await self.bot.send_message(self.channel, msg)
                 rel = False
