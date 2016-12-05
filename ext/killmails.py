@@ -50,15 +50,15 @@ class Killmails:
         if value >= self.others_value and self.others_value:
             return True
 
-        victim_corp_id = package['killmail']['victim']['corporation']['id_str']
-        if victim_corp_id in self.corp_ids:
+        victim_corp_id = package['killmail']['victim']['corporation']['id']
+        if str(victim_corp_id) in self.corp_ids:
             if value >= self.corp_ids[victim_corp_id]:
                 return True
 
         for attacker in package['killmail']['attackers']:
             if 'corporation' in attacker:
-                attacker_corp_id = attacker['corporation']['id_str']
-                if attacker_corp_id in self.corp_ids:
+                attacker_corp_id = attacker['corporation']['id']
+                if str(attacker_corp_id) in self.corp_ids:
                     if value >= self.corp_ids[attacker_corp_id]:
                         return True
 
@@ -100,12 +100,11 @@ class Killmails:
             try:
                 rel = self.is_relevant(package)
             except KeyError as exc:
-                self.logger.warning('%s\n\n%s', exc, package['killID'])
-                await self.bot.send_message(self.channel,
-                                            '<@{}>'.format(OWNER_ID))
-                msgs = paginate(str(package))
+                self.logger.warning(exc)
+                chan = self.bot.get_user_info(OWNER_ID)
+                msgs = paginate('.\n\n{}'.format(str(package)))
                 for msg in msgs:
-                    await self.bot.send_message(self.channel, msg)
+                    await self.bot.send_message(chan, msg)
                 rel = False
             if rel:
                 embed = self.killmail_embed(package)
