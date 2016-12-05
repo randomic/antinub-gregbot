@@ -18,10 +18,9 @@ def setup(bot):
     bot.add_cog(Control(bot))
 
 
-def paginate(string, formatting='```', max_length=2000, sep='\n', trim=True):
+def paginate(string, formatting='```', max_length=2000, sep='\n'):
     'Chops a string into even chunks of max_length around the given separator'
-    max_size = max_length - 2*len(formatting) + len(sep)
-    len_trim = len(sep) if trim else 0
+    max_size = max_length - 2*len(formatting)
 
     str_length = len(string)
     if str_length <= max_size:
@@ -29,7 +28,7 @@ def paginate(string, formatting='```', max_length=2000, sep='\n', trim=True):
     else:
         split = string.rfind(sep, 0, max_size) + 1
         if split:
-            return ([formatting + string[:split-len_trim] + formatting]
+            return ([formatting + string[:split] + formatting]
                     + paginate(string[split:], formatting, max_length, sep))
         else:
             return ([formatting + string[:max_size] + formatting]
