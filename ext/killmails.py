@@ -75,8 +75,8 @@ class Killmails:
         killtitle = '{} | {} | Killmail'.format(ship_name, victim_name)
 
         bareinfo = '{} ({}) lost their {} in {}\n\n' \
-                   + 'Total Value: {:,} ISK\n' \
-                   + '\u200b'
+                   'Total Value: {:,} ISK\n' \
+                   '\u200b'
         killinfo = bareinfo.format(victim_name,
                                    victim['corporation']['name'],
                                    ship_name,
