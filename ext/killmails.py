@@ -97,17 +97,18 @@ class Killmails:
     async def handle_package(self, package):
         'Checks is_relevant to see if the killmail needs posting to discord'
         if package:
-            try:
-                rel = self.is_relevant(package)
-            except KeyError as exc:
-                self.logger.warning(exc)
-                chan = self.bot.get_user_info(OWNER_ID)
-                msgs = paginate('.\n\n{}'.format(str(package)))
-                for msg in msgs:
-                    await self.bot.send_message(chan, msg)
-                rel = False
+            rel = self.is_relevant(package)
             if rel:
-                embed = self.killmail_embed(package)
+                try:
+                    embed = self.killmail_embed(package)
+                except KeyError as exc:
+                    self.logger.warning(exc)
+                    chan = self.bot.get_user_info(OWNER_ID)
+                    msgs = paginate('.\n\n{}'.format(str(package)))
+                    for msg in msgs:
+                        await self.bot.send_message(chan, msg)
+                    rel = False
+
                 await self.bot.send_message(self.channel, embed=embed)
                 self.logger.info('Posted a killmail')
             else:
