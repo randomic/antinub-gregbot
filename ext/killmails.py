@@ -66,37 +66,31 @@ class Killmails:
     def killmail_embed(self, package):
         'Generates the embed which the killmail will be posted in'
         victim = package['killmail']['victim']
-        victim_name = victim['character']['name']
-        ship_name = victim['shipType']['name']
-        ship_id = victim['shipType']['id_str']
-        bare_url = 'http://imageserver.eveonline.com/Type/{}_64.png'
-        ship_icon_url = bare_url.format(ship_id)
+        ship = victim['shipType']
+        embed = Embed()
 
-        killtitle = '{} | {} | Killmail'.format(ship_name, victim_name)
+        embed.title = '{} | {} | {}'.format(
+            package['killmail']['solarSystem']['name'],
+            ship['name'],
+            victim['character']['name'])
 
-        bareinfo = ('{} ({}) lost their {} in {}\n\n'
-                    'Total Value: {:,} ISK\n'
-                    '\u200b')
-        killinfo = bareinfo.format(victim_name,
-                                   victim['corporation']['name'],
-                                   ship_name,
-                                   package['killmail']['solarSystem']['name'],
-                                   package['zkb']['totalValue'])
-
-        killurl = 'https://zkillboard.com/kill/{}/'.format(package['killID'])
-        killtime = package['killmail']['killTime']
+        embed.description = ('{} ({}) lost their {} in {}\n'
+                             'Total Value: {:,} ISK\n'
+                             '\u200b').format(
+                                 victim['character']['name'],
+                                 victim['corporation']['name'],
+                                 ship['name'],
+                                 package['killmail']['solarSystem']['name'],
+                                 package['zkb']['totalValue'])
+        embed.url = 'https://zkillboard.com/kill/{}/'.format(package['killID'])
+        embed.timestamp = datetime.strptime(package['killmail']['killTime'],
+                                            '%Y.%m.%d %H:%M:%S')
         if victim['corporation']['id_str'] in self.corp_ids:
-            killcolour = 0x7a0000  # red
+            embed.colour = 0x7a0000  # red
         else:
-            killcolour = 0x007a00  # green
-
-        embed = Embed(
-            title=killtitle,
-            description=killinfo,
-            url=killurl,
-            timestamp=datetime.strptime(killtime, '%Y.%m.%d %H:%M:%S'),
-            colour=killcolour)
-        embed.set_thumbnail(url=ship_icon_url)
+            embed.colour = 0x007a00  # green
+        embed.set_thumbnail(url=('http://imageserver.eveonline.com/Type/'
+                                 '{}_64.png').format(ship['id_str']))
         return embed
 
     async def handle_package(self, package):
