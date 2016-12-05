@@ -67,10 +67,10 @@ class XmppRelay(ClientXMPP):
         self.channel = self.bot.get_channel(jabber_server['channel'])
 
         self.add_event_handler('session_start', self.start)
+        self.add_event_handler('message', self.message)
+
         if self.connect():
             self.process()
-
-        self.add_event_handler('message', self.message)
 
     def start(self, dummy_event):
         'Follow standard xmpp protocol after connecting to the server'
