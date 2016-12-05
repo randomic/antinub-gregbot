@@ -22,14 +22,23 @@ def _configure_logging():
     fmt = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
+    file_dh = RotatingFileHandler(
+        os.path.join(config.LOG_PATH, 'debug.log'),
+        encoding='utf-8')
+    file_dh.setLevel(logging.DEBUG)
+    file_dh.setFormatter(fmt)
+    root_logger.addHandler(file_dh)
+
     file_ih = RotatingFileHandler(
-        os.path.join(config.LOG_PATH, 'info.log'))
+        os.path.join(config.LOG_PATH, 'info.log'),
+        encoding='utf-8')
     file_ih.setLevel(logging.INFO)
     file_ih.setFormatter(fmt)
     root_logger.addHandler(file_ih)
 
     file_eh = RotatingFileHandler(
-        os.path.join(config.LOG_PATH, 'error.log'))
+        os.path.join(config.LOG_PATH, 'error.log'),
+        encoding='utf-8')
     file_eh.setLevel(logging.ERROR)
     file_eh.setFormatter(fmt)
     root_logger.addHandler(file_eh)
@@ -44,8 +53,8 @@ def _load_extensions(bot):
     'Load the startup extensions'
     logger = logging.getLogger(__name__)
     logger.info('Loading extensions')
-    bot.load_extension('util')
-    logger.info('Successfully loaded extension: util')
+    bot.load_extension('util.control')
+    logger.info('Successfully loaded extension: control')
 
     for ext in config.STARTUP_EXTENSIONS:
         ext_string = 'ext.{}'.format(ext)
