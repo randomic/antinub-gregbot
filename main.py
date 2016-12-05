@@ -60,9 +60,7 @@ def _load_extensions(bot):
 
 
 def _create_bot():
-    _configure_logging()
-
-    # Create the bot
+    'Create the bot'
     socket_family = AF_INET if config.FORCE_IPV4 else 0
     custom_connector = TCPConnector(family=socket_family)
     return commands.Bot(commands.when_mentioned_or(*config.COMMAND_PREFIXES),
@@ -71,6 +69,7 @@ def _create_bot():
 
 
 if __name__ == '__main__':
+    _configure_logging()
     LOGGER = logging.getLogger(__name__)
     LOGGER.info('------------------------------')
     LOGGER.info('Starting up bot')
