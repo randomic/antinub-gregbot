@@ -6,11 +6,11 @@ Contains several commands useful for controlling/debugging the bot
 import logging
 import os
 from collections import deque
-import ext.permcheck as permcheck
 
 import discord.ext.commands as commands
 
 import config
+from . import checks
 
 
 def setup(bot):
@@ -18,7 +18,6 @@ def setup(bot):
     bot.add_cog(Control(bot))
 
 
-# Helper functions
 def paginate(string, formatting='```', max_length=2000, sep='\n', trim=True):
     'Chops a string into even chunks of max_length around the given separator'
     max_size = max_length - 2*len(formatting) + len(sep)
@@ -45,7 +44,7 @@ class Control:
         self.bot = bot
 
     async def on_command_error(self, exception, ctx):
-        'Assign a handler for errors caused by commands'
+        'Assign a handler for errors raised by commands'
         logger = self.logger if not ctx.cog else ctx.cog.logger
 
         if isinstance(exception, commands.CheckFailure):
@@ -58,7 +57,7 @@ class Control:
             logger.exception(exception)
 
     @commands.command()
-    @permcheck.five()
+    @commands.check(checks.is_owner)
     async def stop(self):
         'Logs the bot out of discord and stops it'
         self.logger.info('Unloading extensions')
@@ -70,7 +69,7 @@ class Control:
         await self.bot.logout()
 
     @commands.command()
-    @permcheck.four()
+    @commands.check(checks.is_owner)
     async def log(self, logname: str='error', n_lines: int=10):
         'The bot posts the last n (default 10) lines of the specified logfile'
         try:
@@ -108,14 +107,15 @@ class Control:
             return '\n  \u2716 Bot is not currently logged in'
 
     @commands.command()
-    @permcheck.four()
+    @commands.check(checks.is_owner)
     async def healthcheck(self, *args: str):
-        'Returns the status of the named cog'
+        'Returns the status of the named cog(s)'
         if len(args) == 0:
             args = self.bot.cogs
 
         response = ''
         for name in args:
+            name = name.capitalize()
             if name in self.bot.cogs:
                 cog = self.bot.cogs[name]
                 try:
@@ -130,7 +130,7 @@ class Control:
             await self.bot.say(page)
 
     @commands.group(pass_context=True)
-    @permcheck.four()
+    @commands.check(checks.is_owner)
     async def ext(self, ctx):
         'Group of commands regarding loading and unloading of extensions'
         if ctx.invoked_subcommand is None:
@@ -155,10 +155,14 @@ class Control:
                     await self.bot.say('Successfully loaded extension: {}'
                                        .format(plain_name))
                 except ImportError as exc:
-                    self.logger.warning('Failed to load extension: %s - %s',
-                                        plain_name, exc)
+                    await self.bot.say('Extension not found: {}'
+                                       .format(plain_name))
+                except Exception as exc:
                     await self.bot.say('Failed to load extension: {} - {}'
                                        .format(plain_name, exc))
+                    self.logger.warning('Failed to load extension: %s',
+                                        plain_name)
+                    raise exc
             else:
                 await self.bot.say('{} extension is already loaded'
                                    .format(plain_name))
@@ -168,7 +172,9 @@ class Control:
     @ext.command()
     async def unload(self, name: str=None):
         'Attempt to unload the specified extension'
-        if name is not None:
+        if name is None:
+            await self.bot.say('You must specify an extension to unload')
+        else:
             if name.startswith('ext.'):
                 plain_name = name[4:]
                 lib_name = name
@@ -185,11 +191,9 @@ class Control:
             else:
                 await self.bot.say('{} extension is not loaded'
                                    .format(plain_name))
-        else:
-            await self.bot.say('You must specify an extension to unload')
 
-    @ext.command()
-    async def reload(self, name: str=None):
+    @ext.command(name='reload')
+    async def reload_extension(self, name: str=None):
         'Attempt to unload then load the specified extension'
         if name is not None:
             if name.startswith('ext.'):
@@ -209,11 +213,12 @@ class Control:
                                      plain_name)
                     await self.bot.say('Successfully reloaded extension: {}'
                                        .format(plain_name))
-                except ImportError as exc:
+                except Exception as exc:
                     self.logger.warning('Failed to reload extension: %s - %s',
                                         plain_name, exc)
-                    await self.bot.say('Failed to reload extension: {} - {}'
-                                       .format(plain_name, exc))
+                    await self.bot.say('Failed to reload extension: {}'
+                                       .format(plain_name))
+                    raise exc
             else:
                 await self.bot.say('{} extension is not loaded'
                                    .format(plain_name))
