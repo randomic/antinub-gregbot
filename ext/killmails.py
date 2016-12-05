@@ -12,7 +12,8 @@ from aiohttp import ClientError
 from discord.compat import create_task
 from discord.embeds import Embed
 
-from config import KILLMAILS
+from config import KILLMAILS, OWNER_ID
+from utils.control import paginate
 
 
 def setup(bot):
@@ -96,7 +97,15 @@ class Killmails:
     async def handle_package(self, package):
         'Checks is_relevant to see if the killmail needs posting to discord'
         if package:
-            if self.is_relevant(package):
+            try:
+                rel = self.is_relevant(package)
+            except KeyError as exc:
+                self.logger.warning(exc)
+                msgs = paginate('<@{}>\n{}'.format(OWNER_ID, str(package)))
+                for msg in msgs:
+                    await self.bot.send_message(self.channel, msg)
+                rel = False
+            if rel:
                 embed = self.killmail_embed(package)
                 await self.bot.send_message(self.channel, embed=embed)
                 self.logger.info('Posted a killmail')
@@ -118,10 +127,8 @@ class Killmails:
             try:
                 package = await self.retrieve_kills()
                 await self.handle_package(package)
-                await asyncio.sleep(0.25)
-            except AssertionError as exc:
-                self.logger.exception(exc)
-            except ClientError as exc:
+                await asyncio.sleep(0.5)
+            except (AssertionError, ClientError, asyncio.TimeoutError) as exc:
                 self.logger.exception(exc)
         self.logger.info('Loop done')
 
