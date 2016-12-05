@@ -129,7 +129,7 @@ class Killmails:
             try:
                 package = await self.retrieve_kills()
                 await self.handle_package(package)
-                await asyncio.sleep(0.5)
+                # await asyncio.sleep(0.5)
             except (AssertionError, ClientError, asyncio.TimeoutError) as exc:
                 self.logger.exception(exc)
         self.logger.info('Loop done')
