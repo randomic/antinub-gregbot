@@ -53,7 +53,7 @@ def _load_extensions(bot):
     'Load the startup extensions'
     logger = logging.getLogger(__name__)
     logger.info('Loading extensions')
-    bot.load_extension('util.control')
+    bot.load_extension('utils.control')
     logger.info('Successfully loaded extension: control')
 
     for ext in config.STARTUP_EXTENSIONS:
