@@ -107,7 +107,6 @@ class Killmails:
                     msgs = paginate('.\n\n{}'.format(str(package)))
                     for msg in msgs:
                         await self.bot.send_message(chan, msg)
-                    rel = False
 
                 await self.bot.send_message(self.channel, embed=embed)
                 self.logger.info('Posted a killmail')
