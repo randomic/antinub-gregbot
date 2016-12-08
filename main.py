@@ -22,6 +22,8 @@ def _configure_logging():
 
     file_dh = RotatingFileHandler(
         os.path.join(config.LOG_PATH, 'debug.log'),
+        maxBytes=1000000,
+        backupCount=5,
         encoding='utf-8')
     file_dh.setLevel(logging.DEBUG)
     file_dh.setFormatter(fmt)
@@ -29,6 +31,8 @@ def _configure_logging():
 
     file_ih = RotatingFileHandler(
         os.path.join(config.LOG_PATH, 'info.log'),
+        maxBytes=1000000,
+        backupCount=5,
         encoding='utf-8')
     file_ih.setLevel(logging.INFO)
     file_ih.setFormatter(fmt)
@@ -36,6 +40,8 @@ def _configure_logging():
 
     file_eh = RotatingFileHandler(
         os.path.join(config.LOG_PATH, 'error.log'),
+        maxBytes=100000,
+        backupCount=5,
         encoding='utf-8')
     file_eh.setLevel(logging.ERROR)
     file_eh.setFormatter(fmt)
