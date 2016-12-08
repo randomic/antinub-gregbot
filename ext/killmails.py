@@ -40,7 +40,7 @@ class Killmails:
     async def retrieve_kills(self):
         '''Loops to try to retrieve killmail packages'''
         try:
-            while not self.bot.is_closed:
+            while True:
                 package = await self.wait_for_package()
                 if package:
                     if self.is_relevant(package):
