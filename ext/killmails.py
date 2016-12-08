@@ -55,7 +55,7 @@ class Killmails:
         except asyncio.CancelledError:
             pass
         finally:
-            self.bot.loop.create_task(self.session.close())
+            await self.session.close()
 
     async def wait_for_package(self):
         'Returns a dictionary containing the contents of the redisQ package'
