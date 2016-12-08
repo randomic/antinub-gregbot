@@ -49,9 +49,9 @@ class Killmails:
                         embed = self.killmail_embed(crest_package)
                         await self.bot.send_message(self.channel, embed=embed)
                     else:
-                        self.logger.info('Ignoring killmail')
+                        self.logger.debug('Ignoring killmail')
                 else:
-                    self.logger.info('Got empty package')
+                    self.logger.debug('Got empty package')
         except asyncio.CancelledError:
             pass
         finally:
