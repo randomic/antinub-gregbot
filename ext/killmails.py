@@ -17,10 +17,10 @@ from config import KILLMAILS
 class Killmails:
     '''A cog which monitors zKillboard's redisQ api and posts links to
     killmails which match the provided rule'''
-    def __init__(self, bot):
+    def __init__(self, bot, config):
         self.logger = logging.getLogger(__name__)
         self.bot = bot
-        self.conf = KILLMAILS
+        self.conf = config
 
         self.session = aiohttp.ClientSession()
         self.channel = self.bot.get_channel(self.conf['channel_id'])
@@ -134,4 +134,4 @@ class Killmails:
 
 def setup(bot):
     'Adds the cog to the provided discord bot'
-    bot.add_cog(Killmails(bot))
+    bot.add_cog(Killmails(bot, KILLMAILS))
