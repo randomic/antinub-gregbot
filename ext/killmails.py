@@ -11,7 +11,7 @@ import logging
 import aiohttp
 from discord.embeds import Embed
 
-from config import KILLMAILS
+from config import KILLMAILS, OWNER_ID
 
 
 class Killmails:
@@ -46,7 +46,7 @@ class Killmails:
                 if package:
                     if self.is_relevant(package):
                         k_id = package['killID']
-                        self.logger.info('Relaying killmail %s', k_id)
+                        self.logger.info('Relaying killmail, ID: %s', k_id)
                         crest_package = await self.fetch_crest_info(package)
                         embed = self.killmail_embed(crest_package)
                         await self.bot.send_message(self.channel, embed=embed)
@@ -56,10 +56,16 @@ class Killmails:
                     self.logger.debug('Got empty package')
         except asyncio.CancelledError:
             pass
+        finally:
+            await self.session.close()
 
     def handle_exception(self, fut):
         'Make sure any exception from the future is consumed'
-        self.logger.exception(fut.exception())
+        exc = fut.exception()
+        if exc:
+            msg = exc.message
+            self.logger.exception(msg)
+            self.bot.loop.create_task(self.bot.send_message(OWNER_ID, msg))
 
     async def wait_for_package(self):
         'Returns a dictionary containing the contents of the redisQ package'
