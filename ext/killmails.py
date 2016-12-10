@@ -114,19 +114,24 @@ class Killmails:
     def killmail_embed(self, package):
         'Generates the embed which the killmail will be posted in'
         victim = package['victim']
+        if 'character' in victim:
+            victim_str = '{} ({})'.format(
+                victim['character']['name'],
+                victim['corporation']['name'])
+        else:
+            victim_str = victim['corporation']['name']
         ship = victim['shipType']
         embed = Embed()
 
         embed.title = '{} | {} | {}'.format(
             package['solarSystem']['name'],
             ship['name'],
-            victim['character']['name'])
+            victim['corporation']['name'])
 
-        embed.description = ('{} ({}) lost their {} in {}\n'
+        embed.description = ('{} lost their {} in {}\n'
                              'Total Value: {:,} ISK\n'
                              '\u200b').format(
-                                 victim['character']['name'],
-                                 victim['corporation']['name'],
+                                 victim_str,
                                  ship['name'],
                                  package['solarSystem']['name'],
                                  package['zkb']['totalValue'])
