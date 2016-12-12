@@ -63,9 +63,9 @@ class Killmails:
         'Make sure any exception from the future is consumed'
         exc = fut.exception()
         if exc:
-            msg = exc.message
-            self.logger.exception(msg)
-            self.bot.loop.create_task(self.bot.send_message(OWNER_ID, msg))
+            self.logger.exception(exc)
+            self.bot.loop.create_task(
+                self.bot.send_message(OWNER_ID, '`{}`'.format(exc)))
 
     async def wait_for_package(self):
         'Returns a dictionary containing the contents of the redisQ package'
@@ -121,13 +121,12 @@ class Killmails:
         else:
             victim_str = victim['corporation']['name']
         ship = victim['shipType']
-        embed = Embed()
 
+        embed = Embed()
         embed.title = '{} | {} | {}'.format(
             package['solarSystem']['name'],
             ship['name'],
             victim['corporation']['name'])
-
         embed.description = ('{} lost their {} in {}\n'
                              'Total Value: {:,} ISK\n'
                              '\u200b').format(
