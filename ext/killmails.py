@@ -64,8 +64,9 @@ class Killmails:
         exc = fut.exception()
         if exc:
             self.logger.exception(exc)
+            chan = self.bot.get_user_info(OWNER_ID)
             self.bot.loop.create_task(
-                self.bot.send_message(OWNER_ID, '`{}`'.format(exc)))
+                self.bot.send_message(chan, '`{}`'.format(exc)))
 
     async def wait_for_package(self):
         'Returns a dictionary containing the contents of the redisQ package'
