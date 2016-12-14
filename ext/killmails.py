@@ -85,16 +85,16 @@ class Killmails:
         if value >= self.conf['others_value'] and self.conf['others_value']:
             return True
 
-        victim_corp_id = package['killmail']['victim']['corporation']['id']
-        if str(victim_corp_id) in self.conf['corp_ids']:
-            if value >= self.conf['corp_ids'][victim_corp_id]:
+        victim_corp = str(package['killmail']['victim']['corporation']['id'])
+        if victim_corp in self.conf['corp_ids']:
+            if value >= self.conf['corp_ids'][victim_corp]:
                 return True
 
         for attacker in package['killmail']['attackers']:
             if 'corporation' in attacker:
-                attacker_corp_id = attacker['corporation']['id']
-                if str(attacker_corp_id) in self.conf['corp_ids']:
-                    if value >= self.conf['corp_ids'][attacker_corp_id]:
+                attacker_corp = str(attacker['corporation']['id'])
+                if attacker_corp in self.conf['corp_ids']:
+                    if value >= self.conf['corp_ids'][attacker_corp]:
                         return True
 
         return False
