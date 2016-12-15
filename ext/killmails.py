@@ -4,11 +4,11 @@ Killmail posting cog for antinub-gregbot project.
 Monitors zKillboard's redisQ api and posts killmails relevant to your corp in
 the given channel.
 '''
-import asyncio
+from asyncio import CancelledError
 from datetime import datetime
 import logging
 
-import aiohttp
+from aiohttp import ClientSession
 from discord.embeds import Embed
 
 from config import KILLMAILS, OWNER_ID
@@ -22,14 +22,15 @@ class Killmails:
         self.bot = bot
         self.conf = config
 
-        self.session = aiohttp.ClientSession()
+        self.zkb_listener = None
+        self.session = ClientSession()
         self.channel = self.bot.get_channel(self.conf['channel_id'])
 
-        self.zkb_listener = self.bot.loop.create_task(self.retrieve_kills())
-        self.zkb_listener.add_done_callback(self.handle_exception)
+        self.start_listening()
 
     def __unload(self):
         self.zkb_listener.cancel()
+        self.bot.loop.create_task(self.session.close())
 
     def get_health(self):
         'Returns a string describing the status of this cog'
@@ -37,6 +38,11 @@ class Killmails:
             return '\n  \u2714 Listening'
         else:
             return '\n  \u2716 Not listening'
+
+    def start_listening(self):
+        'Start the listen loop and add the recovery callback'
+        self.zkb_listener = self.bot.loop.create_task(self.retrieve_kills())
+        self.zkb_listener.add_done_callback(self.recover)
 
     async def retrieve_kills(self):
         '''Loops to try to retrieve killmail packages'''
@@ -54,19 +60,20 @@ class Killmails:
                         self.logger.debug('Ignoring killmail')
                 else:
                     self.logger.debug('Got empty package')
-        except asyncio.CancelledError:
+        except CancelledError:
             pass
-        finally:
-            await self.session.close()
 
-    def handle_exception(self, fut):
-        'Make sure any exception from the future is consumed'
-        exc = fut.exception()
-        if exc:
+    def recover(self, fut):
+        'The loop should not break unless cancelled so restart the loop'
+        self.zkb_listener = None
+        if not fut.cancelled():
+            exc = fut.exception()
             self.logger.exception(exc)
             chan = self.bot.get_user_info(OWNER_ID)
             self.bot.loop.create_task(
-                self.bot.send_message(chan, '`{}`'.format(exc)))
+                self.bot.send_message(chan, exc))
+            self.logger.info('An error occurred, restarting the loop')
+            self.start_listening()
 
     async def wait_for_package(self):
         'Returns a dictionary containing the contents of the redisQ package'
