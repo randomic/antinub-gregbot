@@ -89,11 +89,14 @@ class Control:
             pref = pref_str.format(n_lines, logname)
             body = ''.join(lines)
 
-            responses = paginate(body)
+            if body:  # Only continue if there is anything to show
+                responses = paginate(body)
 
-            await self.bot.say(pref)
-            for response in responses:
-                await self.bot.say(response)
+                await self.bot.say(pref)
+                for response in responses:
+                    await self.bot.say(response)
+            else:
+                await self.bot.say('{} log is empty'.format(logname))
         except FileNotFoundError:
             await self.bot.say('Specified log file does not exist')
 
