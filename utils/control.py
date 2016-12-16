@@ -135,7 +135,20 @@ class Control:
     @commands.check(checks.is_owner)
     async def ext(self):
         'Group of commands regarding loading and unloading of extensions'
-        await self.bot.say(self.bot.extensions.keys())
+        extensions = []
+        for ext in self.bot.extensions.keys():
+            if ext.startswith('ext.'):
+                extensions.append(ext.split('.')[-1])
+
+        if len(extensions) > 0:
+            self.logger.info(extensions)
+            response = 'Currently loaded extensions:```\n'
+            response += '\n'.join(extensions)
+            response += '```'
+        else:
+            response = 'No extensions currently loaded'
+
+        await self.bot.say(response)
 
     @ext.command()
     async def load(self, name: str=None):
