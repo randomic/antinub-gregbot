@@ -131,12 +131,11 @@ class Control:
         for page in paginate(response):
             await self.bot.say(page)
 
-    @commands.group(pass_context=True)
+    @commands.group(pass_context=True, invoke_without_command=True)
     @commands.check(checks.is_owner)
-    async def ext(self, ctx):
+    async def ext(self):
         'Group of commands regarding loading and unloading of extensions'
-        if ctx.invoked_subcommand is None:
-            await self.bot.say(self.bot.extensions.keys())
+        await self.bot.say(self.bot.extensions.keys())
 
     @ext.command()
     async def load(self, name: str=None):
