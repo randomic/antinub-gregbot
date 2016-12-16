@@ -27,6 +27,7 @@ def _configure_logging():
         encoding='utf-8')
     file_dh.setLevel(logging.DEBUG)
     file_dh.setFormatter(fmt)
+    file_dh.doRollover()
     root_logger.addHandler(file_dh)
 
     file_ih = RotatingFileHandler(
@@ -36,6 +37,7 @@ def _configure_logging():
         encoding='utf-8')
     file_ih.setLevel(logging.INFO)
     file_ih.setFormatter(fmt)
+    file_ih.doRollover()
     root_logger.addHandler(file_ih)
 
     file_eh = RotatingFileHandler(
@@ -45,6 +47,7 @@ def _configure_logging():
         encoding='utf-8')
     file_eh.setLevel(logging.ERROR)
     file_eh.setFormatter(fmt)
+    file_eh.doRollover()
     root_logger.addHandler(file_eh)
 
     console_h = logging.StreamHandler()
