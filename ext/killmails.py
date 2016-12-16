@@ -11,7 +11,7 @@ import logging
 from aiohttp import ClientSession
 from discord.embeds import Embed
 
-from config import KILLMAILS, OWNER_ID
+from config import KILLMAILS
 
 
 class Killmails:
@@ -69,9 +69,6 @@ class Killmails:
         if not fut.cancelled():
             exc = fut.exception()
             self.logger.exception(exc)
-            chan = self.bot.get_user_info(OWNER_ID)
-            self.bot.loop.create_task(
-                self.bot.send_message(chan, exc))
             self.logger.info('An error occurred, restarting the loop')
             self.start_listening()
 
