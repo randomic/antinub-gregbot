@@ -78,7 +78,6 @@ def _load_extensions(bot):
 if __name__ == '__main__':
     _configure_logging()
     LOGGER = logging.getLogger(__name__)
-    LOGGER.info('------------------------------')
     LOGGER.info('Starting up bot')
     BOT = commands.Bot(commands.when_mentioned_or(*config.COMMAND_PREFIXES),
                        pm_help=True)
