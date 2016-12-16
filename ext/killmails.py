@@ -69,7 +69,7 @@ class Killmails:
         if not fut.cancelled():
             exc = fut.exception()
             self.logger.exception(exc)
-            self.logger.info('An error occurred, restarting the loop')
+            self.logger.error('An error occurred, restarting the loop')
             self.start_listening()
 
     async def wait_for_package(self):
