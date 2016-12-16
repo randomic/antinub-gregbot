@@ -30,7 +30,6 @@ class Killmails:
 
     def __unload(self):
         self.zkb_listener.cancel()
-        self.bot.loop.create_task(self.session.close())
 
     def get_health(self):
         'Returns a string describing the status of this cog'
@@ -61,7 +60,8 @@ class Killmails:
                 else:
                     self.logger.debug('Got empty package')
         except CancelledError:
-            pass
+            await self.session.close()
+            raise CancelledError
 
     def recover(self, fut):
         'The loop should not break unless cancelled so restart the loop'
