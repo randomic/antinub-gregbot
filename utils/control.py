@@ -89,7 +89,7 @@ class Control:
             pref = pref_str.format(n_lines, logname)
             body = ''.join(lines)
 
-            if body:  # Only continue if there is anything to show
+            if len(body) > 0:  # Only continue if there is anything to show
                 responses = paginate(body)
 
                 await self.bot.say(pref)
