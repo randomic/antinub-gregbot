@@ -12,6 +12,7 @@ import discord.ext.commands as commands
 
 from aiohttp import ClientError
 from discord.compat import create_task
+from collections import Counter
 
 from config import KILLMAILS
 
@@ -28,7 +29,7 @@ class Killmails:
         self.logger = logging.getLogger(__name__)
         self.bot = bot
         self.channel = self.bot.get_channel(KILLMAILS['channel_id'])
-        self.corp_id = KILLMAILS['corp_id']
+        self.involved_cutoff = KILLMAILS['involved_cutoff']
         # self.corp_id = 98388312
         self.url = KILLMAILS['redisQ_uri']
         if 'is_relevant' in KILLMAILS:
@@ -42,19 +43,35 @@ class Killmails:
     def get_status(self):
         'Returns a string describing the status of this cog'
         if self.listening:
-            return '\n  \u2714 Listening for corp id: {}'.format(self.corp_id)
+            return '\n  \u2714 Listening'
         else:
             return '\n  \u2716 Not listening'
 
     def _default_is_relevant(self, package):
         'Returns true if the killmail should be relayed to discord'
-        victim_corp = package['killmail']['victim']['corporation']
-        if victim_corp['id'] == self.corp_id:
-            return '{} loss'.format(victim_corp['name'])
-        for attacker in package['killmail']['attackers']:
-            if 'corporation' in attacker:
-                if attacker['corporation']['id'] == self.corp_id:
-                    return '{} kill'.format(attacker['corporation']['name'])
+        victim_atkcount = package['killmail']['attackerCount']
+        kill_location = package['killmail']['solarSystem']['name']
+        if victim_atkcount >= self.involved_cutoff:
+            atkcorps = []
+            for attacker in package['killmail']['attackers']:
+                try:
+                    atkcorps.append(attacker['alliance']['name'])
+                except KeyError:
+                    try:
+                        atkcorps.append(attacker['corporation']['name'])
+                    except KeyError:
+                        atkcorps.append('Unknown')
+            atkctr = Counter(atkcorps)
+            if atkctr.most_common(3):
+                response = '**{} man Fleet detected in'.format(victim_atkcount)
+                response += ' {}:**\n'.format(kill_location)
+                topentities = atkctr.most_common(3)
+                for entity in topentities:
+                    response += '{}: {} Pilot(s).\n'.format(entity[0],
+                                                            entity[1])
+                return response
+            else:
+                return 'Possible Fleet detected in {}.'.format(kill_location)
         return ''
 
     async def handle_package(self, package):
@@ -63,7 +80,7 @@ class Killmails:
             relevancy_string = self.is_relevant(package)
             if relevancy_string:
                 kill_id = package['killID']
-                message = '**{}**\n  '.format(relevancy_string)
+                message = '{}  '.format(relevancy_string)
                 message += 'https://zkillboard.com/kill/{}/'.format(kill_id)
                 await self.bot.send_message(self.channel, message)
                 self.logger.info('Posted a killmail')
