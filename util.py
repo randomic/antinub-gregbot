@@ -5,8 +5,10 @@ Contains several commands useful for controlling/debugging the bot
 '''
 import logging
 import os
+import asyncio
 from collections import deque
 import ext.permcheck as permcheck
+
 
 import discord.ext.commands as commands
 
@@ -54,6 +56,10 @@ class Control:
                 ctx.message.author.mention, ctx.command))
         elif isinstance(exception, commands.CommandNotFound):
             logger.debug(exception)
+        elif isinstance(exception, asyncio.futures):
+            logger.warning(exception)
+            channel = self.bot.get_channel('244849123759489024')
+            self.bot.send_message(channel, '<@83901660732067840> Yo, kms died')
         else:
             logger.exception(exception)
 
