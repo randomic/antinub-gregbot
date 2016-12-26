@@ -10,7 +10,7 @@ import logging
 import ext.permcheck as permcheck
 import discord.ext.commands as commands
 
-from aiohttp import ClientError
+from aiohttp import ClientError, ServerDisconnectedError
 from discord.compat import create_task
 from collections import Counter
 from datetime import datetime, timedelta
@@ -79,7 +79,8 @@ class Killmails:
                     return response
                 else:
                     return 'Possible Fleet detected in {}.'.format(kill_location)
-            return ''
+            else:
+                return ''
         else:
             return ''
 
@@ -116,6 +117,10 @@ class Killmails:
                 self.logger.exception(exc)
             except ClientError as exc:
                 self.logger.exception(exc)
+            except ServerDisconnectedError as exc:
+                self.logger.exception(exc)
+                channel = self.bot.get_channel('244849123759489024')
+                self.bot.send_message(channel, '<@83901660732067840> Yo, kms died')
         self.logger.info('Loop exited')
 
     def start_listening(self):
