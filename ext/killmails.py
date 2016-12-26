@@ -13,6 +13,7 @@ import discord.ext.commands as commands
 from aiohttp import ClientError
 from discord.compat import create_task
 from collections import Counter
+from datetime import datetime, timedelta
 
 from config import KILLMAILS
 
@@ -49,30 +50,38 @@ class Killmails:
 
     def _default_is_relevant(self, package):
         'Returns true if the killmail should be relayed to discord'
-        victim_atkcount = package['killmail']['attackerCount']
-        kill_location = package['killmail']['solarSystem']['name']
-        if victim_atkcount >= self.involved_cutoff:
-            atkcorps = []
-            for attacker in package['killmail']['attackers']:
-                try:
-                    atkcorps.append(attacker['alliance']['name'])
-                except KeyError:
-                    try:
-                        atkcorps.append(attacker['corporation']['name'])
-                    except KeyError:
-                        atkcorps.append('Unknown')
-            atkctr = Counter(atkcorps)
-            if atkctr.most_common(3):
-                response = '**{} man Fleet detected in'.format(victim_atkcount)
-                response += ' {}:**\n'.format(kill_location)
-                topentities = atkctr.most_common(3)
-                for entity in topentities:
-                    response += '{}: {} Pilot(s).\n'.format(entity[0],
-                                                            entity[1])
-                return response
+        kmtime = datetime.strptime(package['killmail']['killTime'],
+                                   '%Y.%m.%d %H:%M:%S')
+        cutofftime = datetime.now() + timedelta(hours=-1)
+        if kmtime > cutofftime:
+            victim_atkcount = package['killmail']['attackerCount']
+            if package['killmail']['solarSystem']['name']:
+                kill_location = package['killmail']['solarSystem']['name']
             else:
-                return 'Possible Fleet detected in {}.'.format(kill_location)
-        return ''
+                return package['killmail']['solarSystem']
+            if victim_atkcount >= self.involved_cutoff:
+                atkcorps = []
+                for attacker in package['killmail']['attackers']:
+                    if 'alliance' in attacker:
+                        atkcorps.append(attacker['alliance']['name'])
+                    elif 'corporation' in attacker:
+                        atkcorps.append(attacker['corporation']['name'])
+                    else:
+                        atkcorps.append('Unknown')
+                atkctr = Counter(atkcorps)
+                if atkctr.most_common(3):
+                    response = '**{} man Fleet detected in'.format(victim_atkcount)
+                    response += ' {}:**\n'.format(kill_location)
+                    topentities = atkctr.most_common(3)
+                    for entity in topentities:
+                        response += '{}: {} Pilot(s).\n'.format(entity[0],
+                                                                entity[1])
+                    return response
+                else:
+                    return 'Possible Fleet detected in {}.'.format(kill_location)
+            return ''
+        else:
+            return ''
 
     async def handle_package(self, package):
         'Checks is_relevant to see if the killmail needs posting to discord'
