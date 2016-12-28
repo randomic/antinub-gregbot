@@ -68,8 +68,9 @@ class Killmails:
         self.zkb_listener = None
         if not fut.cancelled():
             exc = fut.exception()
-            self.logger.exception(exc)
-            self.logger.error('An error occurred, restarting the loop')
+            exc_info = (type(exc), exc, exc.__traceback__)
+            self.logger.error('An error occurred, restarting the loop',
+                              exc_info=exc_info)
             self.start_listening()
 
     async def wait_for_package(self):
