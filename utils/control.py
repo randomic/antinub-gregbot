@@ -53,7 +53,8 @@ class Control:
         elif isinstance(exception, commands.CommandNotFound):
             logger.debug(exception)
         else:
-            logger.exception(exception)
+            exc_info = (type(exception), exception, exception.__traceback__)
+            logger.error(exception, exc_info=exc_info)
 
     @commands.command()
     @commands.check(checks.is_owner)
