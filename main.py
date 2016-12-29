@@ -5,8 +5,10 @@ Configures logging, loads startup extensions and starts the bot.
 '''
 import logging
 from logging.handlers import RotatingFileHandler
+from socket import AF_INET
 import os
 
+from aiohttp import TCPConnector
 import discord.ext.commands as commands
 
 import config
@@ -79,8 +81,10 @@ if __name__ == '__main__':
     _configure_logging()
     LOGGER = logging.getLogger(__name__)
     LOGGER.info('Starting up bot')
+    CONNECTOR = TCPConnector(family=AF_INET if config.FORCE_IPV4 else 0)
     BOT = commands.Bot(commands.when_mentioned_or(*config.COMMAND_PREFIXES),
-                       pm_help=True)
+                       pm_help=True,
+                       connector=CONNECTOR)
 
     @BOT.listen()
     async def on_ready():
