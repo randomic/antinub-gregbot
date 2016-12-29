@@ -10,7 +10,7 @@ from collections import deque
 import discord.ext.commands as commands
 
 import config
-from . import checks
+import utils.checks as checks
 
 
 def setup(bot):
