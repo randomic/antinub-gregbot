@@ -5,13 +5,11 @@ Configures logging, loads startup extensions and starts the bot.
 '''
 import logging
 from logging.handlers import RotatingFileHandler
-import os
 from socket import AF_INET
-from discord import Game
-from discord import Status
+import os
 
-import discord.ext.commands as commands
 from aiohttp import TCPConnector
+import discord.ext.commands as commands
 
 import config
 
@@ -24,16 +22,34 @@ def _configure_logging():
     fmt = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
+    file_dh = RotatingFileHandler(
+        os.path.join(config.LOG_PATH, 'debug.log'),
+        maxBytes=1000000,
+        backupCount=5,
+        encoding='utf-8')
+    file_dh.setLevel(logging.DEBUG)
+    file_dh.setFormatter(fmt)
+    file_dh.doRollover()
+    root_logger.addHandler(file_dh)
+
     file_ih = RotatingFileHandler(
-        os.path.join(config.LOG_PATH, 'info.log'))
+        os.path.join(config.LOG_PATH, 'info.log'),
+        maxBytes=1000000,
+        backupCount=5,
+        encoding='utf-8')
     file_ih.setLevel(logging.INFO)
     file_ih.setFormatter(fmt)
+    file_ih.doRollover()
     root_logger.addHandler(file_ih)
 
     file_eh = RotatingFileHandler(
-        os.path.join(config.LOG_PATH, 'error.log'))
+        os.path.join(config.LOG_PATH, 'error.log'),
+        maxBytes=100000,
+        backupCount=5,
+        encoding='utf-8')
     file_eh.setLevel(logging.ERROR)
     file_eh.setFormatter(fmt)
+    file_eh.doRollover()
     root_logger.addHandler(file_eh)
 
     console_h = logging.StreamHandler()
@@ -46,8 +62,8 @@ def _load_extensions(bot):
     'Load the startup extensions'
     logger = logging.getLogger(__name__)
     logger.info('Loading extensions')
-    bot.load_extension('util')
-    logger.info('Successfully loaded extension: util')
+    bot.load_extension('utils.control')
+    logger.info('Successfully loaded extension: control')
 
     for ext in config.STARTUP_EXTENSIONS:
         ext_string = 'ext.{}'.format(ext)
@@ -61,28 +77,19 @@ def _load_extensions(bot):
             logger.warning('Extension with same name already loaded: %s', ext)
 
 
-def _create_bot():
-    _configure_logging()
-
-    # Create the bot
-    logger = logging.getLogger(__name__)
-    logger.info('------------------------------')
-    logger.info('Starting up bot')
-    socket_family = AF_INET if config.FORCE_IPV4 else 0
-    custom_connector = TCPConnector(family=socket_family)
-    return commands.Bot('<@'+config.BOT_ID+'> ', connector=custom_connector), logger
-
-
 if __name__ == '__main__':
-    BOT, LOGGER = _create_bot()
-
+    _configure_logging()
+    LOGGER = logging.getLogger(__name__)
+    LOGGER.info('Starting up bot')
+    CONNECTOR = TCPConnector(family=AF_INET if config.FORCE_IPV4 else 0)
+    BOT = commands.Bot(commands.when_mentioned_or(*config.COMMAND_PREFIXES),
+                       pm_help=True,
+                       connector=CONNECTOR)
 
     @BOT.listen()
     async def on_ready():
         'Note in log when the bot is ready'
         LOGGER.info('Logged in as %s, id: %s', BOT.user.name, BOT.user.id)
         _load_extensions(BOT)
-        status = Game(name=config.BOT_STATUS)
-        await BOT.change_presence(game=status, status=Status.dnd)
 
     BOT.run(config.TOKEN)
