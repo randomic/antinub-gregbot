@@ -1,6 +1,8 @@
 '''
 Command checks cog made for antinub-gregbot project.
 '''
+from discord import PrivateChannel
+
 import config
 
 
@@ -15,3 +17,8 @@ def is_admin(ctx):
         return True
 
     return ctx.message.author.id in config.ADMINS
+
+
+def is_private_channel(ctx):
+    'Check whether or not the context channel is a PrivateChannel'
+    return isinstance(ctx.message.channel, PrivateChannel)
