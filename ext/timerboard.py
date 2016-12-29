@@ -98,21 +98,15 @@ class Timerboard:
 
     @commands.command()
     @commands.check(checks.is_admin)
-    async def removefleet(self, number: str):
+    async def removefleet(self, number: int=0):
         'Removes a fleet from the json via number on the list of fleets'
         fleetjson = self.loadjson(self.fname)
-        try:
-            number = int(number)
-            if number >= 1:
-                fleetjson['fleets'].pop(number-1)
-                self.savejson(fleetjson, self.fname)
-                await self.bot.say("Fleet %d successfully removed." % number)
-            else:
-                await self.bot.say("You didn't enter a valid number.")
-                self.logger.warning("User didn't enter a valid number.")
-        except ValueError:
-            self.logger.warning("User didn't enter an integer")
-            await self.bot.say("Please enter an integer.")
+        if number > 0 and number <= len(fleetjson['fleets']):
+            fleetjson['fleets'].pop(number-1)
+            self.savejson(fleetjson, self.fname)
+            await self.bot.say("Fleet %d successfully removed." % number)
+        else:
+            await self.bot.say("You didn't enter a valid fleet number.")
 
     @commands.command()
     @commands.check(checks.is_admin)
@@ -147,25 +141,28 @@ class Timerboard:
 
     @commands.command()
     @commands.check(checks.is_admin)
-    async def resetannouncefleets(self, number: str):
+    async def resetannouncefleets(self, number: str=''):
         '''Resets the boolean specifying whether a fleet has been announced.
         Enter a fleet number to reset a specific fleet or "all" to reset all'''
         fleetjson = self.loadjson(self.fname)
         n_fleets = len(fleetjson['fleets'])
         if number.isdecimal():
-            fleetjson['fleets'][int(number)-1]["announced"] = False
-            self.savejson(fleetjson, self.fname)
-            await self.bot.say(
-                "Fleet %s's announcement status reset." % number)
-            self.logger.info(
-                'User reset fleet %s\'s announcement status', number)
-        elif number == "all":
+            number = int(number)
+            if number > 0 and number <= n_fleets:
+                fleetjson['fleets'][int(number)-1]["announced"] = False
+                self.savejson(fleetjson, self.fname)
+                await self.bot.say(
+                    "Fleet %s's announcement status reset." % number)
+                self.logger.info(
+                    'User reset fleet %s\'s announcement status', number)
+                return
+        elif number == '*' or number == 'all':
             for idx in range(n_fleets):
                 fleetjson['fleets'][idx]["announced"] = False
             self.savejson(fleetjson, self.fname)
             await self.bot.say("All anouncement statuses reset.")
             self.logger.info('User reset all announcement statuses')
-        else:
-            error = "Enter a valid number to reset or 'all' to reset all"
-            await self.bot.say(error)
-            self.logger.warning('User entered an invalid number to reset.')
+            return
+
+        error = "Enter a valid fleet number to reset or * to reset all"
+        await self.bot.say(error)
