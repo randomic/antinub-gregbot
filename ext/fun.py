@@ -10,6 +10,8 @@ from os.path import isfile
 
 import discord.ext.commands as commands
 
+import utils.checks as checks
+
 
 def setup(bot):
     'Adds the cog to the provided discord bot'
@@ -112,6 +114,10 @@ class Fun:
     async def guess(self, ctx, guess: int=0):
         '''Allows the user to guess a number. If there is no number to guess a
         new game is started'''
+        if checks.is_private_channel(ctx):
+            await self.bot.say(
+                'This command cannot be used in a private channel')
+            return
         if self.guess_number:
             if guess < 1 or guess > self.guess_max:
                 await self.bot.delete_message(ctx.message)
