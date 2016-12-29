@@ -6,24 +6,25 @@ the given channel.
 '''
 from asyncio import CancelledError
 from datetime import datetime
+from socket import AF_INET
 import logging
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, TCPConnector
 from discord.embeds import Embed
 
-from config import KILLMAILS
+from config import KILLMAILS, FORCE_IPV4
 
 
 class Killmails:
     '''A cog which monitors zKillboard's redisQ api and posts links to
     killmails which match the provided rule'''
-    def __init__(self, bot, config):
+    def __init__(self, bot, config, connector):
         self.logger = logging.getLogger(__name__)
         self.bot = bot
         self.conf = config
 
         self.zkb_listener = None
-        self.session = ClientSession()
+        self.session = ClientSession(connector=connector)
         self.channel = self.bot.get_channel(self.conf['channel_id'])
 
         self.start_listening()
@@ -154,4 +155,5 @@ class Killmails:
 
 def setup(bot):
     'Adds the cog to the provided discord bot'
-    bot.add_cog(Killmails(bot, KILLMAILS))
+    connector = TCPConnector(family=AF_INET if FORCE_IPV4 else 0)
+    bot.add_cog(Killmails(bot, KILLMAILS, connector))
