@@ -5,7 +5,9 @@ Contains several commands useful for controlling/debugging the bot
 '''
 import logging
 import os
+import sys
 from collections import deque
+from traceback import format_exception
 
 import discord.ext.commands as commands
 
@@ -42,6 +44,17 @@ class Control:
         self.logger = logging.getLogger(__name__)
         self.bot = bot
 
+    async def on_error(self, event, *dummy_args, **dummy_kwargs):
+        'Assign a handler for errors raised by events'
+        exc_info = sys.exc_info()
+        self.logger.error('Error occurred in event: %s',
+                          event,
+                          exc_info=exc_info)
+        resps = paginate(''.join(format_exception(*exc_info)),
+                         '```Python\n')
+        for resp in resps:
+            await self.notify_admins(resp)
+
     async def on_command_error(self, exception, ctx):
         'Assign a handler for errors raised by commands'
         logger = self.logger if not ctx.cog else ctx.cog.logger
@@ -55,6 +68,18 @@ class Control:
         else:
             exc_info = (type(exception), exception, exception.__traceback__)
             logger.error(exception, exc_info=exc_info)
+            resps = paginate(''.join(format_exception(*exc_info)),
+                             '```Python\n')
+            for resp in resps:
+                await self.notify_admins(resp)
+
+    async def notify_admins(self, message):
+        'Send message to the private channel of each admin'
+        recipients = set(config.ADMINS)
+        recipients.add(config.OWNER_ID)  # Include owner if not already there
+        for user_id in recipients:
+            channel = await self.bot.get_user_info(user_id)
+            await self.bot.send_message(channel, message)
 
     @commands.command()
     @commands.check(checks.is_owner)
