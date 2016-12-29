@@ -126,13 +126,13 @@ class Fun:
                                    .format(guess, ctx.message.author.mention))
                 self.guess_number = 0
             elif guess < self.guess_number:
+                await self.bot.delete_message(ctx.message)
                 await self.bot.say('{} is too low! Guess again!'
                                    .format(guess))
-                await self.bot.delete_message(ctx.message)
             else:
+                await self.bot.delete_message(ctx.message)
                 await self.bot.say('{} is too high! Guess again!'
                                    .format(guess))
-                await self.bot.delete_message(ctx.message)
         else:
             if guess < 1:
                 guess = 1000
