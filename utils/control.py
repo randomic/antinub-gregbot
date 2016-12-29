@@ -99,7 +99,7 @@ class Control:
         await self.bot.logout()
 
     @commands.command()
-    @commands.check(checks.is_owner)
+    @commands.check(checks.is_admin)
     async def log(self, logname: str='error', n_lines: int=10):
         'The bot posts the last n (default 10) lines of the specified logfile'
         try:
@@ -140,7 +140,7 @@ class Control:
             return '\n  \u2716 Bot is not currently logged in'
 
     @commands.command()
-    @commands.check(checks.is_owner)
+    @commands.check(checks.is_admin)
     async def healthcheck(self, *args: str):
         'Returns the status of the named cog(s)'
         if len(args) == 0:
@@ -163,7 +163,7 @@ class Control:
             await self.bot.say(page)
 
     @commands.group(pass_context=True, invoke_without_command=True)
-    @commands.check(checks.is_owner)
+    @commands.check(checks.is_admin)
     async def ext(self):
         'Group of commands regarding loading and unloading of extensions'
         extensions = []
