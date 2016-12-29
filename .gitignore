@@ -1,3 +1,5 @@
+# Project specific ignores
+_test*
 *.json
 config.py
 

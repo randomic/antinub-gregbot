@@ -1,9 +1,9 @@
-"""
-Example bot settings for antinub-gregbot project.
+'''
+Bot settings for antinub-gregbot project.
 
 At minimum you will need to add your bot's oauth in TOKEN and your discord user
 ID in OWNER_ID so the bot only listens to you for volatile commands.
-"""
+'''
 import os
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -11,33 +11,38 @@ LOG_PATH = os.path.join(PROJECT_ROOT, 'log')
 
 # The token for the bot, taken from the discord application page
 TOKEN = 'my token'
-# The user ID of the person the bot should listen to for sensitive commands.
-OWNER_ID = 'owner id here'
-# The user ID of the bot
-BOT_ID = 'bot id here'
+# List of command prefixes the bot will pick up on in addition to whenever
+# it is mentioned (can be left empty to only listen for mentions)
+COMMAND_PREFIXES = ['!']
+# The user ID of the person the bot should listen to for sensitive commands
+OWNER_ID = 'bot owner id here'
+ADMINS = ['admin 1 id', 'admin 2 id']
 
 # Extremely verbose logging when true.
 DEBUG = False
-# If your network has difficulties with IPv6 you will need to set this to True
+# If your network has difficulties with IPv6 you may need to set this to True
 FORCE_IPV4 = False
-# Displays a message under the bots name in discord
-BOT_STATUS = "KappaPride"
 
-# util extension is considered essential and will be automatically loaded first
 STARTUP_EXTENSIONS = [
     # 'killmails',
     # 'jabber',
     # 'fun'
 ]
 
-
 # EXTENSION SPECIFIC SETTINGS
 
 KILLMAILS = {
-    'redisQ_uri': 'http://redisq.zkillboard.com/listen.php',
-    'corp_id': 98388312,
+    'redisQ_url': 'http://redisq.zkillboard.com/listen.php',
     'channel_id': 'channel id here',
-    # 'is_relevant': lambda x: x['killmail']['victim']['corporation']['name']
+    # Corps you wish to track
+    # e.g. '98388312': 100, posts Pandemic Horde Inc. kills/losses
+    # as long as they are worth more than 100 million isk
+    'corp_ids': {
+        '98388312': 100,  # [THXFC]
+    },
+    # In millions of isk, all losses above this values will be posted
+    # Set to 0 to disable posting of non-corp losses regardless of value
+    'others_value': 1000,
 }
 
 JABBER = {
@@ -55,23 +60,4 @@ JABBER = {
             'channel':      'channel id here'
         }
     ]
-}
-
-PERMCHECK = {
-    'servers': {
-        'your_server_id_here': {
-            'groups': {
-                'admin': 4,
-                'director': 3,
-                'respected': 2,
-                'member': 1
-            }
-        },
-        'another_server_id_here': {
-            'groups': {
-                'director': 3,
-                'respected': 2
-            }
-        }
-    }
 }
