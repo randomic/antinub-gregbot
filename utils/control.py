@@ -37,6 +37,15 @@ def paginate(string, pref='```\n', aff='```', max_length=2000, sep='\n'):
                     + paginate(string[max_size:], pref, aff, max_length, sep))
 
 
+async def notify_admins(bot, message):
+    'Send message to the private channel of each admin'
+    recipients = set(config.ADMINS)
+    recipients.add(config.OWNER_ID)  # Include owner if not already there
+    for user_id in recipients:
+        channel = await bot.get_user_info(user_id)
+        await bot.send_message(channel, message)
+
+
 class Control:
     '''A cog defining commands for controlling the
     bot's operation such as stopping the bot'''
@@ -50,11 +59,13 @@ class Control:
         self.logger.error('"%s" event caused an error',
                           event,
                           exc_info=exc_info)
-        await self.notify_admins('"{}" event caused an error:'.format(event))
+        await notify_admins(
+            self.bot,
+            '"{}" event caused an error:'.format(event))
         resps = paginate(''.join(format_exception(*exc_info)),
                          '```Python\n')
         for resp in resps:
-            await self.notify_admins(resp)
+            await notify_admins(self.bot, resp)
 
     async def on_command_error(self, exception, ctx):
         'Assign a handler for errors raised by commands'
@@ -71,20 +82,13 @@ class Control:
             logger.error('"%s" command caused an error',
                          ctx.command,
                          exc_info=exc_info)
-            await self.notify_admins(
+            await notify_admins(
+                self.bot,
                 '"{}" command caused an error:'.format(ctx.command))
             resps = paginate(''.join(format_exception(*exc_info)),
                              '```Python\n')
             for resp in resps:
-                await self.notify_admins(resp)
-
-    async def notify_admins(self, message):
-        'Send message to the private channel of each admin'
-        recipients = set(config.ADMINS)
-        recipients.add(config.OWNER_ID)  # Include owner if not already there
-        for user_id in recipients:
-            channel = await self.bot.get_user_info(user_id)
-            await self.bot.send_message(channel, message)
+                await notify_admins(self.bot, resp)
 
     @commands.command()
     @commands.check(checks.is_owner)
