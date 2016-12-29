@@ -16,6 +16,7 @@ TOKEN = 'my token'
 COMMAND_PREFIXES = ['!']
 # The user ID of the person the bot should listen to for sensitive commands
 OWNER_ID = 'bot owner id here'
+ADMINS = ['admin 1 id', 'admin 2 id']
 
 # Extremely verbose logging when true.
 DEBUG = False
