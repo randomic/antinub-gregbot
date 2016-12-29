@@ -104,7 +104,7 @@ class Fun:
     async def listmemes(self):
         '''Posts a list of the current memes available in the file'''
         memelist = self.loadjson(self.fname)['memes']
-        response = "**Memes:**\n```"
+        response = "**Memes:**\n```\n"
         for key in sorted(memelist.keys()):
             response += "{}:\n  {}\n".format(key, memelist[key])
         response += "```"

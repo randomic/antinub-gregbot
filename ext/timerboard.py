@@ -55,7 +55,7 @@ class Timerboard:
         response += "**Fleet {}:**\n".format(index+1)
         ftime = datetime.datetime.strptime(fleet["fleettime"],
                                            '%Y-%m-%dT%H:%M:%S')
-        response += "```When: {}\n".format(ftime)
+        response += "```\nWhen: {}\n".format(ftime)
         response += "FC: {}\n".format(fleet["fc"])
         response += "Type: {}\n".format(fleet['fleettype'])
         response += "Doctrine: {}\n".format(fleet['doctrine'])

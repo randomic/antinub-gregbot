@@ -18,21 +18,21 @@ def setup(bot):
     bot.add_cog(Control(bot))
 
 
-def paginate(string, formatting='```\n', max_length=2000, sep='\n'):
+def paginate(string, pref='```\n', aff='```', max_length=2000, sep='\n'):
     'Chops a string into even chunks of max_length around the given separator'
-    max_size = max_length - 2*len(formatting)
+    max_size = max_length - len(pref) - len(aff)
 
     str_length = len(string)
     if str_length <= max_size:
-        return [formatting + string + formatting]
+        return [pref + string + aff]
     else:
         split = string.rfind(sep, 0, max_size) + 1
         if split:
-            return ([formatting + string[:split] + formatting]
-                    + paginate(string[split:], formatting, max_length, sep))
+            return ([pref + string[:split] + aff]
+                    + paginate(string[split:], pref, aff, max_length, sep))
         else:
-            return ([formatting + string[:max_size] + formatting]
-                    + paginate(string[max_size:], formatting, max_length, sep))
+            return ([pref + string[:max_size] + aff]
+                    + paginate(string[max_size:], pref, aff, max_length, sep))
 
 
 class Control:
@@ -143,7 +143,7 @@ class Control:
 
         if len(extensions) > 0:
             self.logger.info(extensions)
-            response = 'Currently loaded extensions:```\n'
+            response = 'Currently loaded extensions:\n```\n'
             response += '\n'.join(extensions)
             response += '```'
         else:
