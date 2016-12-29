@@ -47,9 +47,10 @@ class Control:
     async def on_error(self, event, *dummy_args, **dummy_kwargs):
         'Assign a handler for errors raised by events'
         exc_info = sys.exc_info()
-        self.logger.error('Error occurred in event: %s',
+        self.logger.error('"%s" event caused an error',
                           event,
                           exc_info=exc_info)
+        await self.notify_admins('"{}" event caused an error:'.format(event))
         resps = paginate(''.join(format_exception(*exc_info)),
                          '```Python\n')
         for resp in resps:
@@ -67,7 +68,11 @@ class Control:
             logger.debug(exception)
         else:
             exc_info = (type(exception), exception, exception.__traceback__)
-            logger.error(exception, exc_info=exc_info)
+            logger.error('"%s" command caused an error',
+                         ctx.command,
+                         exc_info=exc_info)
+            await self.notify_admins(
+                '"{}" command caused an error:'.format(ctx.command))
             resps = paginate(''.join(format_exception(*exc_info)),
                              '```Python\n')
             for resp in resps:
