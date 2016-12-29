@@ -66,23 +66,24 @@ class XmppRelay(ClientXMPP):
         self.relay_from = jabber_server['relay_from']
         self.channel = self.bot.get_channel(jabber_server['channel'])
 
-        self.add_event_handler('session_start', self.start)
+        self.add_event_handler('session_start', self.session_start)
         self.add_event_handler('message', self.message)
 
         if self.connect():
             self.process()
 
-    def start(self, dummy_event):
+    def session_start(self, dummy_event=None):
         'Follow standard xmpp protocol after connecting to the server'
         self.send_presence(ptype='away')
         self.get_roster()
 
     async def message(self, msg):
         'Relay messages from specified senders to specified discord channel'
-        sender = msg['from'].bare
-        if sender in self.relay_from:
-            self.logger.info('Relaying message from %s', sender)
-            r_message = '@everyone```\n{}```'.format(msg['body'])
-            await self.bot.send_message(self.channel, r_message)
-        else:
-            self.logger.info('Ignored message from %s', sender)
+        if msg['type'] == 'chat':
+            sender = msg['from'].bare
+            if sender in self.relay_from:
+                self.logger.info('Relaying message from %s', sender)
+                r_message = '@everyone```\n{}```'.format(msg['body'])
+                await self.bot.send_message(self.channel, r_message)
+            else:
+                self.logger.info('Ignored message from %s', sender)
