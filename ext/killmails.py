@@ -8,11 +8,13 @@ from asyncio import CancelledError
 from datetime import datetime
 from socket import AF_INET
 import logging
+from traceback import format_exception
 
 from aiohttp import ClientSession, TCPConnector
 from discord.embeds import Embed
 
 from config import KILLMAILS, FORCE_IPV4
+from utils.control import notify_admins, paginate
 
 
 class Killmails:
@@ -72,7 +74,16 @@ class Killmails:
             exc_info = (type(exc), exc, exc.__traceback__)
             self.logger.error('An error occurred, restarting the loop',
                               exc_info=exc_info)
+            self.bot.loop.create_task(self.error_to_admins(exc_info))
             self.start_listening()
+
+    async def error_to_admins(self, exc_info):
+        'Pass on the error which caused the loop to break to admins'
+        await notify_admins(self.bot, 'Error in killmail retrieve loop:')
+        resps = paginate(''.join(format_exception(*exc_info)),
+                         '```Python\n')
+        for resp in resps:
+            await notify_admins(self.bot, resp)
 
     async def wait_for_package(self):
         'Returns a dictionary containing the contents of the redisQ package'
