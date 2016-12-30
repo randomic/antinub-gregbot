@@ -46,18 +46,17 @@ KILLMAILS = {
 }
 
 JABBER = {
+    'channel': 'channel id here',
     'servers': [
         {
             'jabber_id':    'user@jabber.server',
             'password':     'hunter2',
-            'relay_from':   ['important_messages@jabber.server'],
-            'channel':      'channel id here'
+            'relay_from':   ['important_messages@jabber.server']
         },
         {
             'jabber_id':    'user@jabber2.server',
             'password':     'hunter2',
-            'relay_from':   ['important_messages@jabber2.server'],
-            'channel':      'channel id here'
+            'relay_from':   ['important_messages@jabber2.server']
         }
     ]
 }
