@@ -15,24 +15,25 @@ from config import JABBER
 
 def setup(bot):
     'Adds the cog to the provided discord bot'
-    bot.add_cog(Jabber(bot, JABBER['servers']))
+    bot.add_cog(Jabber(bot, JABBER))
 
 
 class Jabber:
     '''A cog which connects to config defined xmpp servers and relays messages
     from certain senders to the config defined channel'''
-    def __init__(self, bot, xmpp_servers):
+    def __init__(self, bot, config):
         self.logger = logging.getLogger(__name__)
         self.bot = bot
-        self.xmpp_servers = xmpp_servers
+        self.channel = self.bot.get_channel(config['channel'])
         self.xmpp_relays = []
+        self.last_msg = None
 
-        self.create_clients()
+        self.create_clients(config['servers'])
 
-    def create_clients(self):
+    def create_clients(self, xmpp_servers):
         'Creates an XmppRelay client for each server specified'
-        for server in self.xmpp_servers:
-            self.xmpp_relays.append(XmppRelay(self.bot, server))
+        for server in xmpp_servers:
+            self.xmpp_relays.append(XmppRelay(self, server))
 
     def get_health(self):
         'Returns a string describing the status of this cog'
@@ -48,6 +49,12 @@ class Jabber:
             response = '\n  \u2716 No relays initialised'
         return response
 
+    async def relay_message(self, msg):
+        'Relay message to discord, ignore if it is a duplicate'
+        self.logger.info('Relaying message from %s', msg['from'].bare)
+        r_message = '@everyone\n```\n{}```'.format(msg['body'])
+        await self.bot.send_message(self.channel, r_message)
+
     def __unload(self):
         for xmpp_relay in self.xmpp_relays:
             xmpp_relay.disconnect()
@@ -56,15 +63,14 @@ class Jabber:
 class XmppRelay(ClientXMPP):
     '''Connects to an XMPP server and relays broadcasts
     to a specified discord channel'''
-    def __init__(self, bot, jabber_server):
+    def __init__(self, cog, jabber_server):
         ClientXMPP.__init__(self,
                             jabber_server['jabber_id'],
                             jabber_server['password'])
 
-        self.logger = logging.getLogger(__name__)
-        self.bot = bot
+        self.logger = cog.logger
+        self.cog = cog
         self.relay_from = jabber_server['relay_from']
-        self.channel = self.bot.get_channel(jabber_server['channel'])
 
         self.add_event_handler('session_start', self.session_start)
         self.add_event_handler('message', self.message)
@@ -78,12 +84,12 @@ class XmppRelay(ClientXMPP):
         self.get_roster()
 
     async def message(self, msg):
-        'Relay messages from specified senders to specified discord channel'
+        'Pass messages from specified senders to the cog for relaying'
         if msg['type'] == 'chat':
             sender = msg['from'].bare
             if sender in self.relay_from:
-                self.logger.info('Relaying message from %s', sender)
-                r_message = '@everyone\n```\n{}```'.format(msg['body'])
-                await self.bot.send_message(self.channel, r_message)
+                await self.cog.relay_message(msg)
             else:
                 self.logger.info('Ignored message from %s', sender)
+        else:
+            self.logger.info('Ignored message of type %s', msg['type'])
