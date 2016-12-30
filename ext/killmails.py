@@ -4,7 +4,7 @@ Killmail posting cog for antinub-gregbot project.
 Monitors zKillboard's redisQ api and posts killmails relevant to your corp in
 the given channel.
 '''
-from asyncio import CancelledError
+from asyncio import CancelledError, sleep
 from datetime import datetime
 from socket import AF_INET
 import logging
@@ -41,13 +41,15 @@ class Killmails:
         else:
             return '\n  \u2716 Not listening'
 
-    def start_listening(self):
+    def start_listening(self, delay=0):
         'Start the listen loop and add the recovery callback'
-        self.zkb_listener = self.bot.loop.create_task(self.retrieve_kills())
+        self.zkb_listener = self.bot.loop.create_task(
+            self.retrieve_kills(delay))
         self.zkb_listener.add_done_callback(self.recover)
 
-    async def retrieve_kills(self):
+    async def retrieve_kills(self, delay):
         '''Loops to try to retrieve killmail packages'''
+        await sleep(delay)
         try:
             while True:
                 package = await self.wait_for_package()
@@ -75,7 +77,7 @@ class Killmails:
             self.logger.error('An error occurred, restarting the loop',
                               exc_info=exc_info)
             self.bot.loop.create_task(self.error_to_admins(exc_info))
-            self.start_listening()
+            self.start_listening(10)
 
     async def error_to_admins(self, exc_info):
         'Pass on the error which caused the loop to break to admins'
