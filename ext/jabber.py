@@ -51,9 +51,18 @@ class Jabber:
 
     async def relay_message(self, msg):
         'Relay message to discord, ignore if it is a duplicate'
-        self.logger.info('Relaying message from %s', msg['from'].bare)
-        r_message = '@everyone\n```\n{}```'.format(msg['body'])
-        await self.bot.send_message(self.channel, r_message)
+        body = msg['body']
+        idx = body.rfind('Broadcast sent at ')
+        raw_msg = body[:idx] if idx > 0 else body
+
+        if raw_msg != self.last_msg:
+            self.last_msg = raw_msg
+            self.logger.info('Relaying message from %s', msg['from'].bare)
+            r_message = '@everyone\n```\n{}```'.format(msg['body'])
+            await self.bot.send_message(self.channel, r_message)
+        else:
+            self.logger.info('Ignored duplicate message from %s',
+                             msg['from'].bare)
 
     def __unload(self):
         for xmpp_relay in self.xmpp_relays:
