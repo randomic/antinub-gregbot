@@ -72,13 +72,24 @@ class Timerboard:
 
     @commands.command()
     @commands.check(checks.is_admin)
-    async def addfleet(self, fdate: str, ftime: str, flco: str,
-                       formup: str, doct: str, ftype: str):
+    async def addfleet(self, *args):
         '''Adds a fleet to the list of fleets in the json.
         Input fleets in the format
         "DD/MM/YYYY HH/MM FC FORMUP DOCTRINE FLEETTYPE'''
-        fleetdtime = datetime.datetime.strptime((fdate + ftime),
-                                                '%d/%m/%Y%H:%M')
+        if not args or len(args) != 6:
+            if args:
+                response = "You only entered {} argument(s)".format(len(args))
+            else:
+                response = "You didn't enter any arguments"
+            response += ". Please ensure all of the 6 arguments are entered."
+            await self.bot.say(response)
+            return
+        try:
+            fleetdtime = datetime.datetime.strptime((args[0]+args[1]),
+                                                    '%d/%m/%Y%H:%M')
+        except ValueError:
+            await self.bot.say("You entered an invalid date or time.")
+            return
         self.logger.info('Converted to datetime')
         if fleetdtime <= datetime.datetime.now():
             await self.bot.say("Date entered is before the current date.")
@@ -87,10 +98,10 @@ class Timerboard:
             fleetjson = self.loadjson(self.fname)
             fleetjson["fleets"].append({
                 'fleettime': fleetdtime.isoformat(),
-                'fc': flco,
-                'formup': formup,
-                'doctrine': doct,
-                'fleettype': ftype,
+                'fc': args[2],
+                'formup': args[3],
+                'doctrine': args[4],
+                'fleettype': args[5],
                 'announced': False
             })
             self.savejson(fleetjson, self.fname)
