@@ -53,15 +53,18 @@ class Control:
         self.logger = logging.getLogger(__name__)
         self.bot = bot
 
+        # Override default event exception handling
+        self.bot.on_error = self.on_error
+
     async def on_error(self, event, *dummy_args, **dummy_kwargs):
         'Assign a handler for errors raised by events'
         exc_info = sys.exc_info()
-        self.logger.error('"%s" event caused an error',
+        self.logger.error("Exception in '%s' event",
                           event,
                           exc_info=exc_info)
         await notify_admins(
             self.bot,
-            '"{}" event caused an error:'.format(event))
+            "Exception in '{}' event".format(event))
         resps = paginate(''.join(format_exception(*exc_info)),
                          '```Python\n')
         for resp in resps:
@@ -79,12 +82,12 @@ class Control:
             logger.debug(exception)
         else:
             exc_info = (type(exception), exception, exception.__traceback__)
-            logger.error('"%s" command caused an error',
+            logger.error("Exception in '%s' command",
                          ctx.command,
                          exc_info=exc_info)
             await notify_admins(
                 self.bot,
-                '"{}" command caused an error:'.format(ctx.command))
+                "Exception in '{}' command".format(ctx.command))
             resps = paginate(''.join(format_exception(*exc_info)),
                              '```Python\n')
             for resp in resps:
