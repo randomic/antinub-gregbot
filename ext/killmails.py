@@ -54,14 +54,7 @@ class Killmails:
             while True:
                 package = await self.wait_for_package()
                 if package:
-                    if self.is_relevant(package):
-                        k_id = package['killID']
-                        self.logger.info('Relaying killmail, ID: %s', k_id)
-                        crest_package = await self.fetch_crest_info(package)
-                        embed = self.killmail_embed(crest_package)
-                        await self.bot.send_message(self.channel, embed=embed)
-                    else:
-                        self.logger.debug('Ignoring killmail')
+                    self.bot.dispatch('killmail', package)
                 else:
                     self.logger.debug('Got empty package')
         except CancelledError:
@@ -97,6 +90,17 @@ class Killmails:
                 self.logger.info('redisQ is taking too long to respond')
             else:
                 self.logger.error('redisQ: %s error occurred', resp.status)
+
+    async def on_killmail(self, package):
+        'Test the killmail for relevancy and then send to discord or ignore'
+        if self.is_relevant(package):
+            k_id = package['killID']
+            self.logger.info('Relaying killmail, ID: %s', k_id)
+            crest_package = await self.fetch_crest_info(package)
+            embed = self.killmail_embed(crest_package)
+            await self.bot.send_message(self.channel, embed=embed)
+        else:
+            self.logger.debug('Ignoring killmail')
 
     def is_relevant(self, package):
         'Returns True if a killmail should be relayed to discord'
