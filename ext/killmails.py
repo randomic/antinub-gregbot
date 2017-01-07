@@ -74,11 +74,10 @@ class Killmails:
 
     async def error_to_admins(self, exc_info):
         'Pass on the error which caused the loop to break to admins'
-        await notify_admins(self.bot, 'Error in killmail retrieve loop:')
-        resps = paginate(''.join(format_exception(*exc_info)),
-                         '```Python\n')
-        for resp in resps:
-            await notify_admins(self.bot, resp)
+        message = 'Error in killmail retrieve loop:'
+        traceback = paginate(''.join(format_exception(*exc_info)),
+                             '```Python\n')
+        await notify_admins(self.bot, message, *traceback)
 
     async def wait_for_package(self):
         'Returns a dictionary containing the contents of the redisQ package'
