@@ -10,7 +10,7 @@ from socket import AF_INET
 import logging
 from traceback import format_exception
 
-from aiohttp import ClientSession, TCPConnector
+from aiohttp import ClientResponseError, ClientSession, TCPConnector
 from discord.embeds import Embed
 
 from config import KILLMAILS, FORCE_IPV4
@@ -52,7 +52,12 @@ class Killmails:
         await sleep(delay)
         try:
             while True:
-                package = await self.wait_for_package()
+                try:
+                    package = await self.wait_for_package()
+                except ClientResponseError:
+                    self.logger.warning('Ignoring ClientResponseError')
+                    continue
+
                 if package:
                     self.bot.dispatch('killmail', package)
                 else:
