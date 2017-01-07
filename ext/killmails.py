@@ -10,7 +10,7 @@ from socket import AF_INET
 import logging
 from traceback import format_exception
 
-from aiohttp import ClientSession, TCPConnector
+from aiohttp import ClientResponseError, ClientSession, TCPConnector
 from discord.embeds import Embed
 
 from config import KILLMAILS, FORCE_IPV4
@@ -52,7 +52,12 @@ class Killmails:
         await sleep(delay)
         try:
             while True:
-                package = await self.wait_for_package()
+                try:
+                    package = await self.wait_for_package()
+                except ClientResponseError:
+                    self.logger.warning('Ignoring ClientResponseError')
+                    continue
+
                 if package:
                     self.bot.dispatch('killmail', package)
                 else:
@@ -74,11 +79,10 @@ class Killmails:
 
     async def error_to_admins(self, exc_info):
         'Pass on the error which caused the loop to break to admins'
-        await notify_admins(self.bot, 'Error in killmail retrieve loop:')
-        resps = paginate(''.join(format_exception(*exc_info)),
-                         '```Python\n')
-        for resp in resps:
-            await notify_admins(self.bot, resp)
+        message = 'Error in killmail retrieve loop:'
+        traceback = paginate(''.join(format_exception(*exc_info)),
+                             '```Python\n')
+        await notify_admins(self.bot, message, *traceback)
 
     async def wait_for_package(self):
         'Returns a dictionary containing the contents of the redisQ package'

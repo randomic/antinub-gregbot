@@ -37,13 +37,14 @@ def paginate(string, pref='```\n', aff='```', max_length=2000, sep='\n'):
                     + paginate(string[max_size:], pref, aff, max_length, sep))
 
 
-async def notify_admins(bot, message):
+async def notify_admins(bot, *messages):
     'Send message to the private channel of each admin'
     recipients = set(config.ADMINS)
     recipients.add(config.OWNER_ID)  # Include owner if not already there
     for user_id in recipients:
         channel = await bot.get_user_info(user_id)
-        await bot.send_message(channel, message)
+        for message in messages:
+            await bot.send_message(channel, message)
 
 
 class Control:
@@ -62,13 +63,10 @@ class Control:
         self.logger.error("Exception in '%s' event",
                           event,
                           exc_info=exc_info)
-        await notify_admins(
-            self.bot,
-            "Exception in '{}' event".format(event))
-        resps = paginate(''.join(format_exception(*exc_info)),
-                         '```Python\n')
-        for resp in resps:
-            await notify_admins(self.bot, resp)
+        message = "Exception in '{}' event".format(event)
+        traceback = paginate(''.join(format_exception(*exc_info)),
+                             '```Python\n')
+        await notify_admins(self.bot, message, *traceback)
 
     async def on_command_error(self, exception, ctx):
         'Assign a handler for errors raised by commands'
@@ -85,13 +83,10 @@ class Control:
             logger.error("Exception in '%s' command",
                          ctx.command,
                          exc_info=exc_info)
-            await notify_admins(
-                self.bot,
-                "Exception in '{}' command".format(ctx.command))
-            resps = paginate(''.join(format_exception(*exc_info)),
-                             '```Python\n')
-            for resp in resps:
-                await notify_admins(self.bot, resp)
+            message = "Exception in '{}' command".format(ctx.command)
+            traceback = paginate(''.join(format_exception(*exc_info)),
+                                 '```Python\n')
+            await notify_admins(self.bot, message, *traceback)
 
     @commands.command()
     @commands.check(checks.is_owner)
