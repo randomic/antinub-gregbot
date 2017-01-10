@@ -82,7 +82,7 @@ class Killmails:
         message = 'Error in killmail retrieve loop:'
         traceback = paginate(''.join(format_exception(*exc_info)),
                              '```Python\n')
-        await notify_admins(self.bot, message, *traceback)
+        await notify_admins(self.bot, [message, *traceback])
 
     async def wait_for_package(self):
         'Returns a dictionary containing the contents of the redisQ package'
