@@ -82,7 +82,7 @@ class Killmails:
         message = 'Error in killmail retrieve loop:'
         traceback = paginate(''.join(format_exception(*exc_info)),
                              '```Python\n')
-        await notify_admins(self.bot, message, *traceback)
+        await notify_admins(self.bot, [message, *traceback])
 
     async def wait_for_package(self):
         'Returns a dictionary containing the contents of the redisQ package'
@@ -97,14 +97,17 @@ class Killmails:
 
     async def on_killmail(self, package):
         'Test the killmail for relevancy and then send to discord or ignore'
-        if self.is_relevant(package):
-            k_id = package['killID']
-            self.logger.info('Relaying killmail, ID: %s', k_id)
-            crest_package = await self.fetch_crest_info(package)
-            embed = self.killmail_embed(crest_package)
-            await self.bot.send_message(self.channel, embed=embed)
-        else:
-            self.logger.debug('Ignoring killmail')
+        k_id = package['killID']
+        try:
+            if self.is_relevant(package):
+                self.logger.info('Relaying killmail, ID: %s', k_id)
+                crest_package = await self.fetch_crest_info(package)
+                embed = self.killmail_embed(crest_package)
+                await self.bot.send_message(self.channel, embed=embed)
+            else:
+                self.logger.debug('Ignoring killmail')
+        except KeyError:
+            self.logger.warning('Package ID: %s was missing something', k_id)
 
     def is_relevant(self, package):
         'Returns True if a killmail should be relayed to discord'
