@@ -37,7 +37,7 @@ def paginate(string, pref='```\n', aff='```', max_length=2000, sep='\n'):
                     + paginate(string[max_size:], pref, aff, max_length, sep))
 
 
-async def notify_admins(bot, *messages):
+async def notify_admins(bot, messages):
     'Send message to the private channel of each admin'
     recipients = set(config.ADMINS)
     recipients.add(config.OWNER_ID)  # Include owner if not already there
@@ -56,6 +56,7 @@ class Control:
 
         # Override default event exception handling
         self.bot.on_error = self.on_error
+        self.last_error = []
 
     async def on_error(self, event, *dummy_args, **dummy_kwargs):
         'Assign a handler for errors raised by events'
@@ -66,7 +67,11 @@ class Control:
         message = "Exception in '{}' event".format(event)
         traceback = paginate(''.join(format_exception(*exc_info)),
                              '```Python\n')
-        await notify_admins(self.bot, message, *traceback)
+        notification = [message, *traceback]
+
+        if notification != self.last_error:
+            await notify_admins(self.bot, notification)
+            self.last_error = notification
 
     async def on_command_error(self, exception, ctx):
         'Assign a handler for errors raised by commands'
@@ -86,7 +91,11 @@ class Control:
             message = "Exception in '{}' command".format(ctx.command)
             traceback = paginate(''.join(format_exception(*exc_info)),
                                  '```Python\n')
-            await notify_admins(self.bot, message, *traceback)
+            notification = [message, *traceback]
+
+            if notification != self.last_error:
+                await notify_admins(self.bot, notification)
+                self.last_error = notification
 
     @commands.command()
     @commands.check(checks.is_owner)
