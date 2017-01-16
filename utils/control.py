@@ -5,14 +5,14 @@ Contains several commands useful for controlling/debugging the bot
 '''
 import logging
 import os
-import asyncio
+import sys
 from collections import deque
-import ext.permcheck as permcheck
-
+from traceback import format_exception
 
 import discord.ext.commands as commands
 
 import config
+import utils.checks as checks
 
 
 def setup(bot):
@@ -20,23 +20,31 @@ def setup(bot):
     bot.add_cog(Control(bot))
 
 
-# Helper functions
-def paginate(string, formatting='```', max_length=2000, sep='\n', trim=True):
+def paginate(string, pref='```\n', aff='```', max_length=2000, sep='\n'):
     'Chops a string into even chunks of max_length around the given separator'
-    max_size = max_length - 2*len(formatting) + len(sep)
-    len_trim = len(sep) if trim else 0
+    max_size = max_length - len(pref) - len(aff)
 
     str_length = len(string)
     if str_length <= max_size:
-        return [formatting + string + formatting]
+        return [pref + string + aff]
     else:
         split = string.rfind(sep, 0, max_size) + 1
         if split:
-            return ([formatting + string[:split-len_trim] + formatting]
-                    + paginate(string[split:], formatting, max_length, sep))
+            return ([pref + string[:split] + aff]
+                    + paginate(string[split:], pref, aff, max_length, sep))
         else:
-            return ([formatting + string[:max_size] + formatting]
-                    + paginate(string[max_size:], formatting, max_length, sep))
+            return ([pref + string[:max_size] + aff]
+                    + paginate(string[max_size:], pref, aff, max_length, sep))
+
+
+async def notify_admins(bot, messages):
+    'Send message to the private channel of each admin'
+    recipients = set(config.ADMINS)
+    recipients.add(config.OWNER_ID)  # Include owner if not already there
+    for user_id in recipients:
+        channel = await bot.get_user_info(user_id)
+        for message in messages:
+            await bot.send_message(channel, message)
 
 
 class Control:
@@ -46,8 +54,27 @@ class Control:
         self.logger = logging.getLogger(__name__)
         self.bot = bot
 
+        # Override default event exception handling
+        self.bot.on_error = self.on_error
+        self.last_error = []
+
+    async def on_error(self, event, *dummy_args, **dummy_kwargs):
+        'Assign a handler for errors raised by events'
+        exc_info = sys.exc_info()
+        self.logger.error("Exception in '%s' event",
+                          event,
+                          exc_info=exc_info)
+        message = "Exception in '{}' event".format(event)
+        traceback = paginate(''.join(format_exception(*exc_info)),
+                             '```Python\n')
+        notification = [message, *traceback]
+
+        if notification != self.last_error:
+            await notify_admins(self.bot, notification)
+            self.last_error = notification
+
     async def on_command_error(self, exception, ctx):
-        'Assign a handler for errors caused by commands'
+        'Assign a handler for errors raised by commands'
         logger = self.logger if not ctx.cog else ctx.cog.logger
 
         if isinstance(exception, commands.CheckFailure):
@@ -56,15 +83,22 @@ class Control:
                 ctx.message.author.mention, ctx.command))
         elif isinstance(exception, commands.CommandNotFound):
             logger.debug(exception)
-        elif isinstance(exception, asyncio.futures):
-            logger.warning(exception)
-            channel = self.bot.get_channel('244849123759489024')
-            self.bot.send_message(channel, '<@83901660732067840> Yo, kms died')
         else:
-            logger.exception(exception)
+            exc_info = (type(exception), exception, exception.__traceback__)
+            logger.error("Exception in '%s' command",
+                         ctx.command,
+                         exc_info=exc_info)
+            message = "Exception in '{}' command".format(ctx.command)
+            traceback = paginate(''.join(format_exception(*exc_info)),
+                                 '```Python\n')
+            notification = [message, *traceback]
+
+            if notification != self.last_error:
+                await notify_admins(self.bot, notification)
+                self.last_error = notification
 
     @commands.command()
-    @permcheck.check(4)
+    @commands.check(checks.is_owner)
     async def stop(self):
         'Logs the bot out of discord and stops it'
         self.logger.info('Unloading extensions')
@@ -76,7 +110,7 @@ class Control:
         await self.bot.logout()
 
     @commands.command()
-    @permcheck.check(4)
+    @commands.check(checks.is_admin)
     async def log(self, logname: str='error', n_lines: int=10):
         'The bot posts the last n (default 10) lines of the specified logfile'
         try:
@@ -97,15 +131,18 @@ class Control:
             pref = pref_str.format(n_lines, logname)
             body = ''.join(lines)
 
-            responses = paginate(body)
+            if len(body) > 0:  # Only continue if there is anything to show
+                responses = paginate(body)
 
-            await self.bot.say(pref)
-            for response in responses:
-                await self.bot.say(response)
+                await self.bot.say(pref)
+                for response in responses:
+                    await self.bot.say(response)
+            else:
+                await self.bot.say('{} log is empty'.format(logname))
         except FileNotFoundError:
             await self.bot.say('Specified log file does not exist')
 
-    def get_status(self):
+    def get_health(self):
         'Returns a string describing the status of this cog'
         if self.bot.is_logged_in:
             return '\n  \u2714 Logged in as {}, id: {}'.format(
@@ -114,41 +151,51 @@ class Control:
             return '\n  \u2716 Bot is not currently logged in'
 
     @commands.command()
-    @permcheck.check(4)
-    async def status(self, *args: str):
-        'Returns the status of the named cog'
+    @commands.check(checks.is_admin)
+    async def healthcheck(self, *args: str):
+        'Returns the status of the named cog(s)'
         if len(args) == 0:
             args = self.bot.cogs
 
         response = ''
         for name in args:
+            name = name.capitalize()
             if name in self.bot.cogs:
                 cog = self.bot.cogs[name]
                 try:
-                    report = cog.get_status()
-                except TypeError:
-                    report = cog.get_status
+                    report = cog.get_health()
+                    response += '{}: {}\n'.format(name, report)
                 except AttributeError as exc:
                     self.logger.warning(exc)
-                    continue
-                response += '{}: {}\n'.format(name, report)
             else:
                 response += '{}:\n  \u2716 No such extension\n'.format(name)
 
         for page in paginate(response):
             await self.bot.say(page)
 
-    @commands.group(pass_context=True)
-    @permcheck.check(4)
-    async def ext(self, ctx):
+    @commands.group(pass_context=True, invoke_without_command=True)
+    @commands.check(checks.is_admin)
+    async def ext(self):
         'Group of commands regarding loading and unloading of extensions'
-        if ctx.invoked_subcommand is None:
-            await self.bot.say(self.bot.extensions.keys())
+        extensions = []
+        for ext in self.bot.extensions.keys():
+            if ext.startswith('ext.'):
+                extensions.append(ext.split('.')[-1])
+
+        if len(extensions) > 0:
+            self.logger.info(extensions)
+            response = 'Currently loaded extensions:\n```\n'
+            response += '\n'.join(extensions)
+            response += '```'
+        else:
+            response = 'No extensions currently loaded'
+
+        await self.bot.say(response)
 
     @ext.command()
     async def load(self, name: str=None):
         'Attempt to load the specified extension'
-        if name is not None:
+        if name:
             if name.startswith('ext.'):
                 plain_name = name[4:]
                 lib_name = name
@@ -164,10 +211,14 @@ class Control:
                     await self.bot.say('Successfully loaded extension: {}'
                                        .format(plain_name))
                 except ImportError as exc:
-                    self.logger.warning('Failed to load extension: %s - %s',
-                                        plain_name, exc)
+                    await self.bot.say('Extension not found: {}'
+                                       .format(plain_name))
+                except Exception as exc:
                     await self.bot.say('Failed to load extension: {} - {}'
                                        .format(plain_name, exc))
+                    self.logger.warning('Failed to load extension: %s',
+                                        plain_name)
+                    raise exc
             else:
                 await self.bot.say('{} extension is already loaded'
                                    .format(plain_name))
@@ -177,7 +228,9 @@ class Control:
     @ext.command()
     async def unload(self, name: str=None):
         'Attempt to unload the specified extension'
-        if name is not None:
+        if not name:
+            await self.bot.say('You must specify an extension to unload')
+        else:
             if name.startswith('ext.'):
                 plain_name = name[4:]
                 lib_name = name
@@ -194,13 +247,11 @@ class Control:
             else:
                 await self.bot.say('{} extension is not loaded'
                                    .format(plain_name))
-        else:
-            await self.bot.say('You must specify an extension to unload')
 
-    @ext.command()
-    async def reload(self, name: str=None):
+    @ext.command(name='reload')
+    async def reload_extension(self, name: str=None):
         'Attempt to unload then load the specified extension'
-        if name is not None:
+        if not name:
             if name.startswith('ext.'):
                 plain_name = name[4:]
                 lib_name = name
@@ -218,11 +269,12 @@ class Control:
                                      plain_name)
                     await self.bot.say('Successfully reloaded extension: {}'
                                        .format(plain_name))
-                except ImportError as exc:
+                except Exception as exc:
                     self.logger.warning('Failed to reload extension: %s - %s',
                                         plain_name, exc)
-                    await self.bot.say('Failed to reload extension: {} - {}'
-                                       .format(plain_name, exc))
+                    await self.bot.say('Failed to reload extension: {}'
+                                       .format(plain_name))
+                    raise exc
             else:
                 await self.bot.say('{} extension is not loaded'
                                    .format(plain_name))

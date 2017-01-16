@@ -4,145 +4,180 @@ Killmail posting cog for antinub-gregbot project.
 Monitors zKillboard's redisQ api and posts killmails relevant to your corp in
 the given channel.
 '''
-from asyncio import sleep
+from asyncio import CancelledError, sleep
+from datetime import datetime
+from socket import AF_INET
 import logging
+from traceback import format_exception
 
-import ext.permcheck as permcheck
-import discord.ext.commands as commands
+from aiohttp import ClientResponseError, ClientSession, TCPConnector
+from discord.embeds import Embed
 
-from aiohttp import ClientError, ServerDisconnectedError
-from discord.compat import create_task
-from collections import Counter
-from datetime import datetime, timedelta
-
-from config import KILLMAILS
-
-
-def setup(bot):
-    'Adds the cog to the provided discord bot'
-    bot.add_cog(Killmails(bot))
+from config import KILLMAILS, FORCE_IPV4
+from utils.control import notify_admins, paginate
 
 
 class Killmails:
     '''A cog which monitors zKillboard's redisQ api and posts links to
     killmails which match the provided rule'''
-    def __init__(self, bot):
+    def __init__(self, bot, config, connector):
         self.logger = logging.getLogger(__name__)
         self.bot = bot
-        self.channel = self.bot.get_channel(KILLMAILS['channel_id'])
-        self.involved_cutoff = KILLMAILS['involved_cutoff']
-        # self.corp_id = 98388312
-        self.url = KILLMAILS['redisQ_uri']
-        if 'is_relevant' in KILLMAILS:
-            self.is_relevant = KILLMAILS['is_relevant']
-        else:
-            self.is_relevant = self._default_is_relevant
-        self.listening = False
+        self.conf = config
+
+        self.zkb_listener = None
+        self.session = ClientSession(connector=connector)
+        self.channel = self.bot.get_channel(self.conf['channel_id'])
 
         self.start_listening()
 
-    def get_status(self):
+    def __unload(self):
+        self.zkb_listener.cancel()
+
+    def get_health(self):
         'Returns a string describing the status of this cog'
-        if self.listening:
+        if not self.zkb_listener.done():
             return '\n  \u2714 Listening'
         else:
             return '\n  \u2716 Not listening'
 
-    def _default_is_relevant(self, package):
-        'Returns true if the killmail should be relayed to discord'
-        kmtime = datetime.strptime(package['killmail']['killTime'],
-                                   '%Y.%m.%d %H:%M:%S')
-        cutofftime = datetime.now() + timedelta(hours=-1)
-        if kmtime > cutofftime:
-            victim_atkcount = package['killmail']['attackerCount']
-            if package['killmail']['solarSystem']['name']:
-                kill_location = package['killmail']['solarSystem']['name']
-            else:
-                return package['killmail']['solarSystem']
-            if victim_atkcount >= self.involved_cutoff:
-                atkcorps = []
-                for attacker in package['killmail']['attackers']:
-                    if 'alliance' in attacker:
-                        atkcorps.append(attacker['alliance']['name'])
-                    elif 'corporation' in attacker:
-                        atkcorps.append(attacker['corporation']['name'])
-                    else:
-                        atkcorps.append('Unknown')
-                atkctr = Counter(atkcorps)
-                if atkctr.most_common(3):
-                    response = '**{} man Fleet detected in'.format(victim_atkcount)
-                    response += ' {}:**\n'.format(kill_location)
-                    topentities = atkctr.most_common(3)
-                    for entity in topentities:
-                        response += '{}: {} Pilot(s).\n'.format(entity[0],
-                                                                entity[1])
-                    return response
-                else:
-                    return 'Possible Fleet detected in {}.'.format(kill_location)
-            else:
-                return ''
-        else:
-            return ''
+    def start_listening(self, delay=0):
+        'Start the listen loop and add the recovery callback'
+        self.zkb_listener = self.bot.loop.create_task(
+            self.retrieve_kills(delay))
+        self.zkb_listener.add_done_callback(self.recover)
 
-    async def handle_package(self, package):
-        'Checks is_relevant to see if the killmail needs posting to discord'
-        if package:
-            relevancy_string = self.is_relevant(package)
-            if relevancy_string:
-                kill_id = package['killID']
-                message = '{}  '.format(relevancy_string)
-                message += 'https://zkillboard.com/kill/{}/'.format(kill_id)
-                await self.bot.send_message(self.channel, message)
-                self.logger.info('Posted a killmail')
-            else:
-                self.logger.debug('Ignored a killmail')
-        else:
-            self.logger.debug('No kills retrieved')
-
-    async def retrieve_kills(self):
-        'Returns a dictionary containing the contents of the redisQ package'
-        async with self.bot.http.session.get(self.url) as response:
-            assert response.status == 200
-            zkb_data = await response.json()
-            return zkb_data['package']
-
-    async def _run_listen_loop(self):
+    async def retrieve_kills(self, delay):
         '''Loops to try to retrieve killmail packages'''
-        while self.listening:
-            try:
-                package = await self.retrieve_kills()
-                await self.handle_package(package)
-                await sleep(0.25)
-            except AssertionError as exc:
-                self.logger.exception(exc)
-            except ClientError as exc:
-                self.logger.exception(exc)
-            except ServerDisconnectedError as exc:
-                self.logger.exception(exc)
-                channel = self.bot.get_channel('244849123759489024')
-                self.bot.send_message(channel, '<@83901660732067840> Yo, kms died')
-        self.logger.info('Loop exited')
+        await sleep(delay)
+        try:
+            while True:
+                try:
+                    package = await self.wait_for_package()
+                except ClientResponseError:
+                    self.logger.warning('Ignoring ClientResponseError')
+                    continue
 
-    def start_listening(self):
-        'Starts the task of checking for new killmails'
-        self.listening = True
-        create_task(self._run_listen_loop())
+                if package:
+                    self.bot.dispatch('killmail', package)
+                else:
+                    self.logger.debug('Got empty package')
+        except CancelledError:
+            await self.session.close()
+            raise CancelledError
 
-    def __unload(self):
-        self.listening = False
+    def recover(self, fut):
+        'The loop should not break unless cancelled so restart the loop'
+        self.zkb_listener = None
+        if not fut.cancelled():
+            exc = fut.exception()
+            exc_info = (type(exc), exc, exc.__traceback__)
+            self.logger.error('An error occurred, restarting the loop',
+                              exc_info=exc_info)
+            self.bot.loop.create_task(self.error_to_admins(exc_info))
+            self.start_listening(10)
 
-    @commands.group(pass_context=True)
-    @permcheck.check(4)
-    async def killmails(self, ctx):
-        '''Group of commands regarding stopping and starting
-        of killmail scraping'''
-        if ctx.invoked_subcommand is None:
-            await self.bot.say(self.bot.extensions.keys())
+    async def error_to_admins(self, exc_info):
+        'Pass on the error which caused the loop to break to admins'
+        message = 'Error in killmail retrieve loop:'
+        traceback = paginate(''.join(format_exception(*exc_info)),
+                             '```Python\n')
+        await notify_admins(self.bot, [message, *traceback])
 
-    async def start(self):
-        'Attempts to start the task of checking for new killmails'
-        self.start_listening
+    async def wait_for_package(self):
+        'Returns a dictionary containing the contents of the redisQ package'
+        async with self.session.get(self.conf['redisQ_url']) as resp:
+            if resp.status == 200:
+                zkb_data = await resp.json()
+                return zkb_data['package']
+            elif resp.status == 502:
+                self.logger.info('redisQ is taking too long to respond')
+            else:
+                self.logger.error('redisQ: %s error occurred', resp.status)
 
-    async def stop(self):
-        'Stops the task of checking for new killmails'
-        self.listening = False
+    async def on_killmail(self, package):
+        'Test the killmail for relevancy and then send to discord or ignore'
+        k_id = package['killID']
+        try:
+            if self.is_relevant(package):
+                self.logger.info('Relaying killmail, ID: %s', k_id)
+                crest_package = await self.fetch_crest_info(package)
+                embed = self.killmail_embed(crest_package)
+                await self.bot.send_message(self.channel, embed=embed)
+            else:
+                self.logger.debug('Ignoring killmail')
+        except KeyError:
+            self.logger.warning('Package ID: %s was missing something', k_id)
+
+    def is_relevant(self, package):
+        'Returns True if a killmail should be relayed to discord'
+        value = package['zkb']['totalValue'] / 1000000.0
+        if value >= self.conf['others_value'] and self.conf['others_value']:
+            return True
+
+        victim_corp = str(package['killmail']['victim']['corporation']['id'])
+        if victim_corp in self.conf['corp_ids']:
+            if value >= self.conf['corp_ids'][victim_corp]:
+                return True
+
+        for attacker in package['killmail']['attackers']:
+            if 'corporation' in attacker:
+                attacker_corp = str(attacker['corporation']['id'])
+                if attacker_corp in self.conf['corp_ids']:
+                    if value >= self.conf['corp_ids'][attacker_corp]:
+                        return True
+
+        return False
+
+    async def fetch_crest_info(self, package):
+        'Fills in potentially missing information from CREST api'
+        zkb = package['zkb']  # The zkb specific part of the package
+        async with self.session.get(zkb['href']) as resp:
+            if resp.status == 200:
+                crest_data = await resp.json()
+                crest_data['zkb'] = zkb
+                return crest_data
+            elif resp.status == 502:
+                self.logger.info('CREST is taking too long to respond')
+            else:
+                self.logger.error('CREST: %s error occurred', resp.status)
+
+    def killmail_embed(self, package):
+        'Generates the embed which the killmail will be posted in'
+        victim = package['victim']
+        if 'character' in victim:
+            victim_str = '{} ({})'.format(
+                victim['character']['name'],
+                victim['corporation']['name'])
+        else:
+            victim_str = victim['corporation']['name']
+        ship = victim['shipType']
+
+        embed = Embed()
+        embed.title = '{} | {} | {}'.format(
+            package['solarSystem']['name'],
+            ship['name'],
+            victim['corporation']['name'])
+        embed.description = ('{} lost their {} in {}\n'
+                             'Total Value: {:,} ISK\n'
+                             '\u200b').format(
+                                 victim_str,
+                                 ship['name'],
+                                 package['solarSystem']['name'],
+                                 package['zkb']['totalValue'])
+        embed.url = 'https://zkillboard.com/kill/{}/'.format(package['killID'])
+        embed.timestamp = datetime.strptime(package['killTime'],
+                                            '%Y.%m.%d %H:%M:%S')
+        if victim['corporation']['id_str'] in self.conf['corp_ids']:
+            embed.colour = 0x7a0000  # red
+        else:
+            embed.colour = 0x007a00  # green
+        embed.set_thumbnail(url=('http://imageserver.eveonline.com/Type/'
+                                 '{}_64.png').format(ship['id_str']))
+        return embed
+
+
+def setup(bot):
+    'Adds the cog to the provided discord bot'
+    connector = TCPConnector(family=AF_INET if FORCE_IPV4 else 0)
+    bot.add_cog(Killmails(bot, KILLMAILS, connector))
