@@ -228,9 +228,7 @@ class Control:
     @ext.command()
     async def unload(self, name: str=None):
         'Attempt to unload the specified extension'
-        if not name:
-            await self.bot.say('You must specify an extension to unload')
-        else:
+        if name:
             if name.startswith('ext.'):
                 plain_name = name[4:]
                 lib_name = name
@@ -247,11 +245,13 @@ class Control:
             else:
                 await self.bot.say('{} extension is not loaded'
                                    .format(plain_name))
+        else:
+            await self.bot.say('You must specify an extension to unload')
 
     @ext.command(name='reload')
     async def reload_extension(self, name: str=None):
         'Attempt to unload then load the specified extension'
-        if not name:
+        if name:
             if name.startswith('ext.'):
                 plain_name = name[4:]
                 lib_name = name
