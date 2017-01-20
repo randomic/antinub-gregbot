@@ -20,8 +20,6 @@ ADMINS = ['admin 1 id', 'admin 2 id']
 
 # Extremely verbose logging when true.
 DEBUG = False
-# If your network has difficulties with IPv6 you may need to set this to True
-FORCE_IPV4 = False
 
 STARTUP_EXTENSIONS = [
     # 'killmails',
@@ -32,6 +30,9 @@ STARTUP_EXTENSIONS = [
 # EXTENSION SPECIFIC SETTINGS
 
 KILLMAILS = {
+    # If you have difficulties with IPv6 you may need to set this to True
+    'force_ipv4': False,
+
     'redisQ_url': 'http://redisq.zkillboard.com/listen.php',
     'channel_id': 'channel id here',
     # Corps you wish to track
