@@ -13,19 +13,20 @@ from traceback import format_exception
 from aiohttp import ClientResponseError, ClientSession, TCPConnector
 from discord.embeds import Embed
 
-from config import KILLMAILS, FORCE_IPV4
+from config import KILLMAILS
 from utils.control import notify_admins, paginate
 
 
 class Killmails:
     '''A cog which monitors zKillboard's redisQ api and posts links to
     killmails which match the provided rule'''
-    def __init__(self, bot, config, connector):
+    def __init__(self, bot, config):
         self.logger = logging.getLogger(__name__)
         self.bot = bot
         self.conf = config
 
         self.zkb_listener = None
+        connector = TCPConnector(family=AF_INET if config['force_ipv4'] else 0)
         self.session = ClientSession(connector=connector)
         self.channel = self.bot.get_channel(self.conf['channel_id'])
 
@@ -179,5 +180,4 @@ class Killmails:
 
 def setup(bot):
     'Adds the cog to the provided discord bot'
-    connector = TCPConnector(family=AF_INET if FORCE_IPV4 else 0)
-    bot.add_cog(Killmails(bot, KILLMAILS, connector))
+    bot.add_cog(Killmails(bot, KILLMAILS))
