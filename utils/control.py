@@ -173,19 +173,24 @@ class Control:
         for page in paginate(response):
             await self.bot.say(page)
 
-    @commands.group(pass_context=True, invoke_without_command=True)
     @commands.check(checks.is_admin)
-    async def ext(self):
+    @commands.group(pass_context=True, invoke_without_command=True)
+    async def ext(self, ctx):
         'Group of commands regarding loading and unloading of extensions'
+        resp = 'Usage: {}ext [list | load | unload | reload]'
+        await self.bot.say(resp.format(ctx.prefix))
+
+    @ext.command(name='list')
+    async def ext_list(self):
+        'List the currently loaded extensions'
         extensions = []
         for ext in self.bot.extensions.keys():
             if ext.startswith('ext.'):
                 extensions.append(ext.split('.')[-1])
 
         if len(extensions) > 0:
-            self.logger.info(extensions)
             response = 'Currently loaded extensions:\n```\n'
-            response += '\n'.join(extensions)
+            response += '\n'.join(sorted(extensions))
             response += '```'
         else:
             response = 'No extensions currently loaded'
@@ -249,7 +254,7 @@ class Control:
             await self.bot.say('You must specify an extension to unload')
 
     @ext.command(name='reload')
-    async def reload_extension(self, name: str=None):
+    async def ext_reload(self, name: str=None):
         'Attempt to unload then load the specified extension'
         if name:
             if name.startswith('ext.'):
