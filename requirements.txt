@@ -1,2 +1,2 @@
-discord.py==0.16.4
-slixmpp==1.2.3
+discord.py==0.16.5
+slixmpp==1.2.4
