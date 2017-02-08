@@ -11,6 +11,7 @@ import logging
 from traceback import format_exception
 
 from aiohttp import ClientResponseError, ClientSession, TCPConnector
+from discord import Colour
 from discord.embeds import Embed
 
 from config import KILLMAILS
@@ -24,6 +25,10 @@ class Killmails:
         self.logger = logging.getLogger(__name__)
         self.bot = bot
         self.conf = config
+        self.colours = {
+            'green': Colour(0x007a00),
+            'red': Colour(0x7a0000)
+        }
 
         self.zkb_listener = None
         connector = TCPConnector(family=AF_INET if config['force_ipv4'] else 0)
@@ -104,7 +109,9 @@ class Killmails:
                 self.logger.info('Relaying killmail, ID: %s', k_id)
                 crest_package = await self.fetch_crest_info(package)
                 embed = self.killmail_embed(crest_package)
-                await self.bot.send_message(self.channel, embed=embed)
+                msg = await self.bot.send_message(self.channel, embed=embed)
+                if embed.colour == self.colours['red']:
+                    await self.bot.add_reaction(msg, '\U0001F1EB')
             else:
                 self.logger.debug('Ignoring killmail')
         except KeyError:
@@ -170,9 +177,9 @@ class Killmails:
         embed.timestamp = datetime.strptime(package['killTime'],
                                             '%Y.%m.%d %H:%M:%S')
         if victim['corporation']['id_str'] in self.conf['corp_ids']:
-            embed.colour = 0x7a0000  # red
+            embed.colour = self.colours['red']
         else:
-            embed.colour = 0x007a00  # green
+            embed.colour = self.colours['green']
         embed.set_thumbnail(url=('http://imageserver.eveonline.com/Type/'
                                  '{}_64.png').format(ship['id_str']))
         return embed
