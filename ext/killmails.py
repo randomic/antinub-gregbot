@@ -104,7 +104,9 @@ class Killmails:
                 self.logger.info('Relaying killmail, ID: %s', k_id)
                 crest_package = await self.fetch_crest_info(package)
                 embed = self.killmail_embed(crest_package)
-                await self.bot.send_message(self.channel, embed=embed)
+                msg = await self.bot.send_message(self.channel, embed=embed)
+                if msg.embed.colour == 0x7a0000:
+                    await self.bot.add_reaction(msg, ':regional_indicator_f:')
             else:
                 self.logger.debug('Ignoring killmail')
         except KeyError:
