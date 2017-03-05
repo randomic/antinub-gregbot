@@ -6,7 +6,9 @@ Contains several useless but fun commands
 import logging
 from random import randint
 import json
+from datetime import datetime as dt
 from os.path import isfile
+import pytz
 
 import discord.ext.commands as commands
 
@@ -161,3 +163,25 @@ class Fun:
             count += 1
         await self.bot.say(response)
         self.logger.info('User posted a lmgtfy to the chat.')
+
+    @commands.command()
+    async def epeen(self):
+        '''Pastes the time between when the command is used and when quackers
+        got his titan'''
+        currentdtime = dt.now()
+        epeen = (currentdtime - dt(2016, 10, 18, 22, 00, 00)).total_seconds()
+        days, remainder1 = divmod(epeen, 86400)
+        hours, remainder2 = divmod(remainder1, 3600)
+        minutes, seconds = divmod(remainder2, 60)
+        response = "`{} Days, {} Hours,".format(days, hours)
+        response += " {} Minutes and {} seconds".format(minutes, seconds)
+        response += " since Quackers bought a titan.`"
+        await self.bot.say(response)
+
+    @commands.command()
+    async def evetime(self):
+        '''Pastes the current EVETime to the chat'''
+        self.logger.info('command called')
+        evetime = dt.now(pytz.timezone('Iceland'))
+        self.logger.info('Got the evetime')
+        await self.bot.say(evetime)
