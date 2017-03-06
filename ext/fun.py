@@ -174,7 +174,8 @@ class Fun:
         hours, remainder2 = divmod(remainder1, 3600)
         minutes, seconds = divmod(remainder2, 60)
         response = "`{} Days, {} Hours,".format(days, hours)
-        response += " {} Minutes and {} seconds".format(minutes, seconds)
+        response += " {} Minutes and {} seconds".format(minutes,
+                                                        round(seconds, 1))
         response += " since Quackers bought a titan.`"
         await self.bot.say(response)
 
