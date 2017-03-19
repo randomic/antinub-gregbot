@@ -37,9 +37,17 @@ class Fun:
             self.logger.info('Json successfully loaded.')
             return data
         except FileNotFoundError:
-            return {
-                "memes": {}
-            }
+            if jsonname == "memes.json":
+                return {
+                    "memes": {}
+                }
+            elif jsonname == "rorqual.json":
+                return {
+                    "rorqual_last": "",
+                    "rorqual_count": 0
+                }
+            else:
+                return {}
 
     def savejson(self, data, jsonname):
         'A function which saves a json, given the filename'
@@ -186,3 +194,49 @@ class Fun:
         evetime = dt.now(pytz.timezone('Iceland'))
         self.logger.info('Got the evetime')
         await self.bot.say(evetime)
+
+    @commands.group(invoke_without_command=True)
+    async def rorqual(self):
+        '''Sends a message to the chat, telling the user how long it was
+        since the "tackled" subcommand was called, and how many times.'''
+        rorqjson = self.loadjson("rorqual.json")
+        currentdtime = dt.now()
+        if rorqjson["rorqual_last"]:
+            lastrorq = dt.strptime(rorqjson["rorqual_last"],
+                                   '%Y-%m-%dT%H:%M:%S.%f')
+            epeen = (currentdtime - lastrorq).total_seconds()
+            days, remainder1 = divmod(epeen, 86400)
+            hours, remainder2 = divmod(remainder1, 3600)
+            minutes, seconds = divmod(remainder2, 60)
+            response = "`{} Days, {} Hours,".format(days, hours)
+            response += " {} Minutes and {} seconds`".format(minutes,
+                                                             round(seconds, 1))
+            response += " since a rorqual was tackled. "
+        else:
+            response = "No saved record of a rorqual being tackled!"
+            response += " Maybe go to the ice belt? "
+        rorqcount = rorqjson["rorqual_count"]
+        response += "Rorqual tackled incident number: **{}**.".format(rorqcount)
+        await self.bot.say(response)
+
+    @rorqual.command()
+    async def tackled(self):
+        '''Adds another rorqual tackle to the list, also saving the datetime
+        of when it was called.'''
+        rorqjson = self.loadjson("rorqual.json")
+        rorqjson["rorqual_last"] = dt.now().isoformat()
+        rorqjson["rorqual_count"] += 1
+        self.savejson(rorqjson, "rorqual.json")
+        await self.bot.say("Rorqual timer updated.")
+
+    @rorqual.command()
+    @commands.check(checks.is_admin)
+    async def reset(self):
+        '''Resets the rorqual tackled json'''
+        rorqjson = {
+            "rorqual_last": "",
+            "rorqual_count": 0
+        }
+        self.savejson(rorqjson, "rorqual.json")
+        await self.bot.say("Rorqual timer/counter reset.")
+
