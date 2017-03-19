@@ -251,7 +251,7 @@ class Control:
     @ext.command(name='reload')
     async def reload_extension(self, name: str=None):
         'Attempt to unload then load the specified extension'
-        if not name:
+        if name:
             if name.startswith('ext.'):
                 plain_name = name[4:]
                 lib_name = name
