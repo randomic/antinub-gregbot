@@ -49,7 +49,7 @@ class Jabber:
             response = '\n  \u2716 No relays initialised'
         return response
 
-    async def relay_message(self, msg):
+    async def on_broadcast(self, msg):
         'Relay message to discord, ignore if it is a duplicate'
         body = msg['body']
         idx = body.rfind('Broadcast sent at ')
@@ -78,7 +78,7 @@ class XmppRelay(ClientXMPP):
                             jabber_server['password'])
 
         self.logger = cog.logger
-        self.cog = cog
+        self.bot = cog.bot
         self.relay_from = jabber_server['relay_from']
 
         self.add_event_handler('session_start', self.session_start)
@@ -97,7 +97,7 @@ class XmppRelay(ClientXMPP):
         if msg['type'] == 'chat':
             sender = msg['from'].bare
             if sender in self.relay_from:
-                await self.cog.relay_message(msg)
+                self.bot.dispatch('broadcast', msg)
             else:
                 self.logger.info('Ignored message from %s', sender)
         else:
