@@ -173,12 +173,13 @@ class Control:
         for page in paginate(response):
             await self.bot.say(page)
 
-    @commands.group(pass_context=True, invoke_without_command=True)
+    @commands.group(pass_context=True)
     @commands.check(checks.is_admin)
     async def ext(self, ctx):
         'Group of commands regarding loading and unloading of extensions'
-        resp = 'Usage: {}ext [list | load | unload | reload]'
-        await self.bot.say(resp.format(ctx.prefix))
+        if not ctx.invoked_subcommand:
+            resp = 'Usage: {}ext [list | load | unload | reload]'
+            await self.bot.say(resp.format(ctx.prefix))
 
     @ext.command(name='list')
     async def ext_list(self):
