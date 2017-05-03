@@ -65,7 +65,8 @@ class Killmails:
                     continue
 
                 if package:
-                    self.bot.dispatch('killmail', package)
+                    self.bot.dispatch('killmail',
+                                      await self.fetch_crest_info(package))
                 else:
                     self.logger.debug('Got empty package')
         except CancelledError:
@@ -107,15 +108,14 @@ class Killmails:
         try:
             if self.is_relevant(package):
                 self.logger.info('Relaying killmail, ID: %s', k_id)
-                crest_package = await self.fetch_crest_info(package)
-                embed = self.killmail_embed(crest_package)
+                embed = self.killmail_embed(package)
                 msg = await self.bot.send_message(self.channel, embed=embed)
                 if embed.colour == self.colours['red']:
                     await self.bot.add_reaction(msg, '\U0001F1EB')
             else:
                 self.logger.debug('Ignoring killmail')
-        except KeyError:
-            self.logger.warning('Package ID: %s was missing something', k_id)
+        except KeyError as exc:
+            self.logger.exception("Key Error")
 
     def is_relevant(self, package):
         'Returns True if a killmail should be relayed to discord'
@@ -123,12 +123,12 @@ class Killmails:
         if value >= self.conf['others_value'] and self.conf['others_value']:
             return True
 
-        victim_corp = str(package['killmail']['victim']['corporation']['id'])
+        victim_corp = str(package['victim']['corporation']['id'])
         if victim_corp in self.conf['corp_ids']:
             if value >= self.conf['corp_ids'][victim_corp]:
                 return True
 
-        for attacker in package['killmail']['attackers']:
+        for attacker in package['attackers']:
             if 'corporation' in attacker:
                 attacker_corp = str(attacker['corporation']['id'])
                 if attacker_corp in self.conf['corp_ids']:
