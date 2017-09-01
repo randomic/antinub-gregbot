@@ -11,8 +11,8 @@ from traceback import format_exception
 
 import discord.ext.commands as commands
 
-import config
 import utils.checks as checks
+from utils.messaging import paginate, notify_owner
 
 
 def setup(bot):
@@ -43,7 +43,7 @@ class Control:
         notification = [message, *traceback]
 
         if notification != self.last_error:
-            await notify_admins(self.bot, notification)
+            await notify_owner(self.bot, notification)
             self.last_error = notification
 
     async def on_command_error(self, exception, ctx):
@@ -67,7 +67,7 @@ class Control:
             notification = [message, *traceback]
 
             if notification != self.last_error:
-                await notify_admins(self.bot, notification)
+                await notify_owner(self.bot, notification)
                 self.last_error = notification
 
     @commands.command()
@@ -83,7 +83,7 @@ class Control:
         await self.bot.logout()
 
     @commands.command()
-    @commands.check(checks.is_admin)
+    @commands.check(checks.is_owner)
     async def log(self, logname: str='error', n_lines: int=10):
         'The bot posts the last n (default 10) lines of the specified logfile'
         try:
@@ -96,8 +96,16 @@ class Control:
             await self.bot.say('Invalid number of lines to display')
             return
 
+        for handler in logging.getLogger().handlers:
+            if isinstance(handler, logging.FileHandler):
+                if handler.get_name() == logname:
+                    path = handler.baseFilename
+                    break
+        else:
+            await self.bot.say('No handler exists by that name.')
+            return
+
         try:
-            path = os.path.join(config.LOG_PATH, '{}.log'.format(logname))
             with open(path, 'rt') as log:
                 lines = deque(log, n_lines)
             pref_str = 'Here are the last {} lines of the {} log:\n'
@@ -111,7 +119,7 @@ class Control:
                 for response in responses:
                     await self.bot.say(response)
             else:
-                await self.bot.say('{} log is empty'.format(logname))
+                await self.bot.say('Log is empty')
         except FileNotFoundError:
             await self.bot.say('Specified log file does not exist')
 
@@ -124,7 +132,7 @@ class Control:
             return '\n  \u2716 Bot is not currently logged in'
 
     @commands.command()
-    @commands.check(checks.is_admin)
+    @commands.check(checks.is_owner)
     async def healthcheck(self, *args: str):
         'Returns the status of the named cog(s)'
         if len(args) == 0:
@@ -147,7 +155,7 @@ class Control:
             await self.bot.say(page)
 
     @commands.group(pass_context=True)
-    @commands.check(checks.is_admin)
+    @commands.check(checks.is_owner)
     async def ext(self, ctx):
         'Group of commands regarding loading and unloading of extensions'
         if not ctx.invoked_subcommand:
