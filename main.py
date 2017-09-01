@@ -4,66 +4,71 @@ Entry point for antinub-gregbot project.
 Configures logging, loads startup extensions and starts the bot.
 '''
 import logging
-from logging.handlers import RotatingFileHandler
-import os
 
 import discord.ext.commands as commands
+from tinydb import TinyDB, Query
 
-import config
-
-
-def _configure_logging():
-    'Adds file and console handlers and formats the root logger'
-    root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG if config.DEBUG else logging.INFO)
-
-    fmt = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-    file_dh = RotatingFileHandler(
-        os.path.join(config.LOG_PATH, 'debug.log'),
-        maxBytes=1000000,
-        backupCount=5,
-        encoding='utf-8')
-    file_dh.setLevel(logging.DEBUG)
-    file_dh.setFormatter(fmt)
-    file_dh.doRollover()
-    root_logger.addHandler(file_dh)
-
-    file_ih = RotatingFileHandler(
-        os.path.join(config.LOG_PATH, 'info.log'),
-        maxBytes=1000000,
-        backupCount=5,
-        encoding='utf-8')
-    file_ih.setLevel(logging.INFO)
-    file_ih.setFormatter(fmt)
-    file_ih.doRollover()
-    root_logger.addHandler(file_ih)
-
-    file_eh = RotatingFileHandler(
-        os.path.join(config.LOG_PATH, 'error.log'),
-        maxBytes=100000,
-        backupCount=5,
-        encoding='utf-8')
-    file_eh.setLevel(logging.ERROR)
-    file_eh.setFormatter(fmt)
-    file_eh.doRollover()
-    root_logger.addHandler(file_eh)
-
-    console_h = logging.StreamHandler()
-    console_h.setLevel(logging.DEBUG)
-    console_h.setFormatter(fmt)
-    root_logger.addHandler(console_h)
+from utils.log import configure_logging
 
 
-def _load_extensions(bot):
+def start_bot():
+    """Attempt to load required config or ask user (generally first time).
+
+    """
+    table = TinyDB('db.json').table('config')
+    setting = Query()
+
+    debug = table.get(setting.name == 'debug')
+    if debug:
+        debug = debug['value']
+    else:
+        debug = False
+        table.insert({'name': 'debug', 'value': debug})
+    logging.getLogger().setLevel(logging.DEBUG if debug else logging.INFO)
+
+    cmd_prefixes = table.get(setting.name == 'cmd_prefixes')
+    if cmd_prefixes:
+        cmd_prefixes = cmd_prefixes['value']
+    else:
+        cmd_prefixes = []
+        table.insert({'name': 'cmd_prefixes', 'value': cmd_prefixes})
+
+    token = table.get(setting.name == 'token')
+    if token:
+        token = token['value']
+        save_token = None
+    else:
+        token = input('Enter token: ')
+        save_token = (table, token)
+
+    bot = commands.Bot(commands.when_mentioned_or(*cmd_prefixes),
+                       pm_help=True)
+    bot.loop.create_task(when_ready(bot, save_token))
+
+    bot.run(token)
+
+
+async def when_ready(bot, save_token=None):
+    """Wait until the bot is ready, then load extensions.
+
+    """
+    await bot.wait_until_ready()
+    logger = logging.getLogger(__name__)
+    logger.info('Logged in as %s, id: %s', bot.user.name, bot.user.id)
+    if save_token:
+        table, token = save_token
+        table.insert({'name': 'token', 'value': token})
+    load_extensions(bot)
+
+
+def load_extensions(bot):
     'Load the startup extensions'
     logger = logging.getLogger(__name__)
     logger.info('Loading extensions')
     bot.load_extension('utils.control')
     logger.info('Successfully loaded extension: control')
 
-    for ext in config.STARTUP_EXTENSIONS:
+    for ext in []:
         ext_string = 'ext.{}'.format(ext)
         if ext_string not in bot.extensions:
             try:
@@ -76,16 +81,5 @@ def _load_extensions(bot):
 
 
 if __name__ == '__main__':
-    _configure_logging()
-    LOGGER = logging.getLogger(__name__)
-    LOGGER.info('Starting up bot')
-    BOT = commands.Bot(commands.when_mentioned_or(*config.COMMAND_PREFIXES),
-                       pm_help=True)
-
-    @BOT.listen()
-    async def on_ready():
-        'Note in log when the bot is ready'
-        LOGGER.info('Logged in as %s, id: %s', BOT.user.name, BOT.user.id)
-        _load_extensions(BOT)
-
-    BOT.run(config.TOKEN)
+    configure_logging()
+    start_bot()
