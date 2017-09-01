@@ -4,7 +4,6 @@ Main helper cog made for antinub-gregbot project.
 Contains several commands useful for controlling/debugging the bot
 '''
 import logging
-import os
 import sys
 from collections import deque
 from traceback import format_exception
@@ -197,6 +196,11 @@ class Control:
                                      plain_name)
                     await self.bot.say('Successfully loaded extension: {}'
                                        .format(plain_name))
+                    loaded_extensions = self.bot.config.get(
+                        'loaded_extensions')
+                    loaded_extensions.append(plain_name)
+                    self.bot.config.set('loaded_extensions',
+                                        loaded_extensions)
                 except ImportError as exc:
                     await self.bot.say('Extension not found: {}'
                                        .format(plain_name))
@@ -229,6 +233,9 @@ class Control:
                                  plain_name)
                 await self.bot.say('Successfully unloaded extension: {}'
                                    .format(plain_name))
+                loaded_extensions = self.bot.config.get('loaded_extensions')
+                loaded_extensions.remove(plain_name)
+                self.bot.config.set('loaded_extensions', loaded_extensions)
             else:
                 await self.bot.say('{} extension is not loaded'
                                    .format(plain_name))
