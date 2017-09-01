@@ -6,44 +6,47 @@ Configures logging, loads startup extensions and starts the bot.
 import logging
 
 import discord.ext.commands as commands
-from tinydb import TinyDB, Query
+from tinydb import TinyDB
 
 from utils.log import configure_logging
+from utils.config import Config
 
 
 def start_bot():
     """Attempt to load required config or ask user (generally first time).
 
     """
-    table = TinyDB('db.json').table('config')
-    setting = Query()
+    tdb = TinyDB('db.json')
+    config = Config(tdb)
 
-    debug = table.get(setting.name == 'debug')
-    if debug:
-        debug = debug['value']
-    else:
+    debug = config.get('debug')
+    if not debug:
         debug = False
-        table.insert({'name': 'debug', 'value': debug})
+        config.set('debug', debug)
     logging.getLogger().setLevel(logging.DEBUG if debug else logging.INFO)
 
-    cmd_prefixes = table.get(setting.name == 'cmd_prefixes')
-    if cmd_prefixes:
-        cmd_prefixes = cmd_prefixes['value']
-    else:
+    cmd_prefixes = config.get('cmd_prefixes')
+    if not cmd_prefixes:
         cmd_prefixes = []
-        table.insert({'name': 'cmd_prefixes', 'value': cmd_prefixes})
+        config.set('cmd_prefixes', cmd_prefixes)
 
-    token = table.get(setting.name == 'token')
-    if token:
-        token = token['value']
-        save_token = None
-    else:
+    token = config.get('token')
+    if not token:
         token = input('Enter token: ')
-        save_token = (table, token)
+        save_token = (config, token)
+    else:
+        save_token = None
+
+    owner_id = config.get('owner_id')
+    if not owner_id:
+        owner_id = input('Enter owner ID: ')
+        config.set('owner_id', owner_id)
 
     bot = commands.Bot(commands.when_mentioned_or(*cmd_prefixes),
                        pm_help=True)
     bot.loop.create_task(when_ready(bot, save_token))
+    bot.tdb = tdb
+    bot.config = config
 
     bot.run(token)
 
@@ -57,17 +60,17 @@ async def when_ready(bot, save_token=None):
     logger.info('Logged in as %s, id: %s', bot.user.name, bot.user.id)
     if save_token:
         # If a token was given during startup, save it now we know it's valid.
-        table, token = save_token
-        table.insert({'name': 'token', 'value': token})
+        config, token = save_token
+        config.set('token', token)
     load_extensions(bot)
 
 
 def load_extensions(bot):
     'Load the startup extensions'
     logger = logging.getLogger(__name__)
-    logger.info('Loading extensions')
-    bot.load_extension('utils.control')
-    logger.info('Successfully loaded extension: control')
+    logger.info('Loading core extensions')
+    bot.load_extension('core')
+    logger.info('Successfully loaded core extensions')
 
     for ext in []:
         ext_string = 'ext.{}'.format(ext)
