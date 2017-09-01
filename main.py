@@ -72,14 +72,20 @@ def load_extensions(bot):
     bot.load_extension('core')
     logger.info('Successfully loaded core extensions')
 
-    for ext in []:
-        ext_string = 'ext.{}'.format(ext)
-        if ext_string not in bot.extensions:
+    loaded_extensions = bot.config.get('loaded_extensions')
+    if not loaded_extensions:
+        loaded_extensions = []
+        bot.config.set('loaded_extensions', loaded_extensions)
+
+    for ext in loaded_extensions:
+        ext_mod = 'ext.{}'.format(ext)
+        if ext_mod not in bot.extensions:
             try:
-                bot.load_extension(ext_string)
+                bot.load_extension(ext_mod)
                 logger.info('Successfully loaded extension: %s', ext)
-            except ImportError as exc:
-                logger.warning('Failed to load extension: %s - %s', ext, exc)
+            except ImportError as error:
+                logger.warning(
+                    'Failed to load extension: %s - %s', ext, error)
         else:
             logger.warning('Extension with same name already loaded: %s', ext)
 
