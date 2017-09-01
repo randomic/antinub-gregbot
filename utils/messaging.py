@@ -21,12 +21,7 @@ def paginate(string, pref='```\n', aff='```', max_length=2000, sep='\n'):
 
 
 async def notify_owner(bot, messages):
-    'Send message to the private channel of each admin'
-    recipients = set(config.ADMINS)
-    recipients.add(config.OWNER_ID)  # Include owner if not already there
-    for user_id in recipients:
-        channel = await bot.get_user_info(user_id)
-        for message in messages:
-            await bot.send_message(channel, message)
-
-
+    'Send message to the private channel of the owner'
+    channel = await bot.get_user_info(bot.config.get('owner_id'))
+    for message in messages:
+        await bot.send_message(channel, message)

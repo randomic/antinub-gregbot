@@ -18,7 +18,7 @@ DEFAULT_LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'default',
         },
-        'file': {
+        'error': {
             'level': 'ERROR',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'log/error.log',
@@ -29,7 +29,7 @@ DEFAULT_LOGGING = {
         },
     },
     'root': {
-        'handlers': ['console', 'file'],
+        'handlers': ['console', 'error'],
         'level': 'DEBUG',
     },
 }
