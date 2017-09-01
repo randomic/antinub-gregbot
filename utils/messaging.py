@@ -25,3 +25,16 @@ async def notify_owner(bot, messages):
     channel = await bot.get_user_info(bot.config.get('owner_id'))
     for message in messages:
         await bot.send_message(channel, message)
+
+
+async def message_input(ctx, prompt, timeout=60):
+    message = await ctx.bot.say(prompt)
+    password = await ctx.bot.wait_for_message(
+        timeout=timeout,
+        author=ctx.message.author,
+        channel=ctx.message.channel)
+    if not password:
+        await ctx.bot.edit_message(
+            message,
+            new_content='Timed out, cancelling.')
+    return password
