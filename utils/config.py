@@ -2,7 +2,6 @@
 Abstraction of TinyDB table for storing config
 """
 from tinydb import Query
-from tinydb.operations import set as tdb_set
 
 
 class Config:
@@ -28,7 +27,6 @@ class Config:
 
         """
         if self.table.contains(self.setting.name == name):
-            self.table.update(tdb_set('value', value),
-                              self.setting.name == name)
+            self.table.update({'value': value}, self.setting.name == name)
         else:
             self.table.insert({'name': name, 'value': value})
