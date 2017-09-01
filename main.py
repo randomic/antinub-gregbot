@@ -56,6 +56,7 @@ async def when_ready(bot, save_token=None):
     logger = logging.getLogger(__name__)
     logger.info('Logged in as %s, id: %s', bot.user.name, bot.user.id)
     if save_token:
+        # If a token was given during startup, save it now we know it's valid.
         table, token = save_token
         table.insert({'name': 'token', 'value': token})
     load_extensions(bot)
