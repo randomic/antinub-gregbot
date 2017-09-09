@@ -83,7 +83,7 @@ class Control:
 
     @commands.command()
     @commands.check(checks.is_owner)
-    async def log(self, logname: str='error', n_lines: int=10):
+    async def log(self, logname: str = 'error', n_lines: int = 10):
         'The bot posts the last n (default 10) lines of the specified logfile'
         try:
             n_lines = int(logname)
@@ -111,7 +111,7 @@ class Control:
             pref = pref_str.format(n_lines, logname)
             body = ''.join(lines)
 
-            if len(body) > 0:  # Only continue if there is anything to show
+            if body:  # Only continue if there is anything to show
                 responses = paginate(body)
 
                 await self.bot.say(pref)
@@ -127,14 +127,14 @@ class Control:
         if self.bot.is_logged_in:
             return '\n  \u2714 Logged in as {}, id: {}'.format(
                 self.bot.user.name, self.bot.user.id)
-        else:
-            return '\n  \u2716 Bot is not currently logged in'
+
+        return '\n  \u2716 Bot is not currently logged in'
 
     @commands.command()
     @commands.check(checks.is_owner)
     async def healthcheck(self, *args: str):
         'Returns the status of the named cog(s)'
-        if len(args) == 0:
+        if not args:
             args = self.bot.cogs
 
         response = ''
@@ -169,7 +169,7 @@ class Control:
             if ext.startswith('ext.'):
                 extensions.append(ext.split('.')[-1])
 
-        if len(extensions) > 0:
+        if extensions:
             response = 'Currently loaded extensions:\n```\n'
             response += '\n'.join(sorted(extensions))
             response += '```'
@@ -179,7 +179,7 @@ class Control:
         await self.bot.say(response)
 
     @ext.command()
-    async def load(self, name: str=None):
+    async def load(self, name: str = None):
         'Attempt to load the specified extension'
         if name:
             if name.startswith('ext.'):
@@ -217,7 +217,7 @@ class Control:
             await self.bot.say('You must specify an extension to load')
 
     @ext.command()
-    async def unload(self, name: str=None):
+    async def unload(self, name: str = None):
         'Attempt to unload the specified extension'
         if name:
             if name.startswith('ext.'):
@@ -243,7 +243,7 @@ class Control:
             await self.bot.say('You must specify an extension to unload')
 
     @ext.command(name='reload')
-    async def ext_reload(self, name: str=None):
+    async def ext_reload(self, name: str = None):
         'Attempt to unload then load the specified extension'
         if name:
             if name.startswith('ext.'):
