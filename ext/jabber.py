@@ -59,7 +59,11 @@ class Jabber:
             self.last_msg = raw_msg
             self.logger.info('Relaying message from %s',
                              package['msg']['from'].bare)
-            r_message = '@everyone\n```\n{}```'.format(package['msg']['body'])
+            if package['everyone']:
+                r_message = '@everyone'
+            else:
+                r_message = ''
+            r_message += '\n```\n{}```'.format(package['msg']['body'])
             for channelid in package['forward_to']:
                 channel = self.bot.get_channel(channelid)
                 await self.bot.send_message(channel, r_message)
@@ -103,7 +107,8 @@ class XmppRelay(ClientXMPP):
             if sender in self.relay_from:
                 package = {
                     "msg": msg,
-                    "forward_to": self.jabber_server['forward_to']
+                    "forward_to": self.jabber_server['forward_to'],
+                    "everyone": self.jabber_server['notify_everyone']
                     }
                 self.bot.dispatch('broadcast', package)
             else:
