@@ -24,7 +24,6 @@ class Jabber:
     def __init__(self, bot, config):
         self.logger = logging.getLogger(__name__)
         self.bot = bot
-        self.channel = self.bot.get_channel(config['channel'])
         self.xmpp_relays = []
         self.last_msg = None
 
@@ -49,20 +48,24 @@ class Jabber:
             response = '\n  \u2716 No relays initialised'
         return response
 
-    async def on_broadcast(self, msg):
+    async def on_broadcast(self, package):
         'Relay message to discord, ignore if it is a duplicate'
-        body = msg['body']
+        body = package['msg']['body']
+
         idx = body.rfind('Broadcast sent at ')
         raw_msg = body[:idx] if idx > 0 else body
 
         if raw_msg != self.last_msg:
             self.last_msg = raw_msg
-            self.logger.info('Relaying message from %s', msg['from'].bare)
-            r_message = '@everyone\n```\n{}```'.format(msg['body'])
-            await self.bot.send_message(self.channel, r_message)
+            self.logger.info('Relaying message from %s',
+                             package['msg']['from'].bare)
+            r_message = '@everyone\n```\n{}```'.format(package['msg']['body'])
+            for channelid in package['forward_to']:
+                channel = self.bot.get_channel(channelid)
+                await self.bot.send_message(channel, r_message)
         else:
             self.logger.info('Ignored duplicate message from %s',
-                             msg['from'].bare)
+                             package['msg']['from'].bare)
 
     def __unload(self):
         for xmpp_relay in self.xmpp_relays:
@@ -80,6 +83,7 @@ class XmppRelay(ClientXMPP):
         self.logger = cog.logger
         self.bot = cog.bot
         self.relay_from = jabber_server['relay_from']
+        self.jabber_server = jabber_server
 
         self.add_event_handler('session_start', self.session_start)
         self.add_event_handler('message', self.message)
@@ -97,7 +101,11 @@ class XmppRelay(ClientXMPP):
         if msg['type'] == 'chat':
             sender = msg['from'].bare
             if sender in self.relay_from:
-                self.bot.dispatch('broadcast', msg)
+                package = {
+                    "msg": msg,
+                    "forward_to": self.jabber_server['forward_to']
+                    }
+                self.bot.dispatch('broadcast', package)
             else:
                 self.logger.info('Ignored message from %s', sender)
         else:
