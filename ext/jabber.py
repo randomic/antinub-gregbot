@@ -61,7 +61,8 @@ class Jabber:
             self.logger.info('Relaying message from %s',
                              package['msg']['from'].bare)
             body = package['msg']['body']
-            r_message = paginate(body, aff='```\n@everyone')
+            aff = '```\n@everyone' if package['everyone'] else '```'
+            r_message = paginate(body, aff=aff)
             for channelid in package['forward_to']:
                 channel = self.bot.get_channel(channelid)
                 for page in r_message:
