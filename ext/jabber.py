@@ -64,7 +64,8 @@ class Jabber:
             r_message = paginate(body, aff='```\n@everyone')
             for channelid in package['forward_to']:
                 channel = self.bot.get_channel(channelid)
-                await self.bot.send_message(channel, r_message)
+                for page in r_message:
+                    await self.bot.send_message(channel, page)
         else:
             self.logger.info('Ignored duplicate message from %s',
                              package['msg']['from'].bare)
