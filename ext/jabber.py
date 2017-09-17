@@ -10,6 +10,7 @@ import logging
 
 from slixmpp import ClientXMPP
 
+from utils.messaging import paginate
 from config import JABBER
 
 
@@ -59,11 +60,8 @@ class Jabber:
             self.last_msg = raw_msg
             self.logger.info('Relaying message from %s',
                              package['msg']['from'].bare)
-            if package['everyone']:
-                r_message = '@everyone'
-            else:
-                r_message = ''
-            r_message += '\n```\n{}```'.format(package['msg']['body'])
+            body = package['msg']['body']
+            r_message = paginate(body, aff='```\n@everyone')
             for channelid in package['forward_to']:
                 channel = self.bot.get_channel(channelid)
                 await self.bot.send_message(channel, r_message)
