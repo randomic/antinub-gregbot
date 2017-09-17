@@ -15,7 +15,7 @@ from discord import Colour
 from discord.embeds import Embed
 
 from config import KILLMAILS
-from utils.control import notify_admins, paginate
+from utils.messaging import notify_owner, paginate
 
 
 class Killmails:
@@ -44,8 +44,8 @@ class Killmails:
         'Returns a string describing the status of this cog'
         if not self.zkb_listener.done():
             return '\n  \u2714 Listening'
-        else:
-            return '\n  \u2716 Not listening'
+
+        return '\n  \u2716 Not listening'
 
     def start_listening(self, delay=0):
         'Start the listen loop and add the recovery callback'
@@ -89,7 +89,7 @@ class Killmails:
         message = 'Error in killmail retrieve loop:'
         traceback = paginate(''.join(format_exception(*exc_info)),
                              '```Python\n')
-        await notify_admins(self.bot, [message, *traceback])
+        await notify_owner(self.bot, [message, *traceback])
 
     async def wait_for_package(self):
         'Returns a dictionary containing the contents of the redisQ package'
@@ -114,7 +114,7 @@ class Killmails:
                     await self.bot.add_reaction(msg, '\U0001F1EB')
             else:
                 self.logger.debug('Ignoring killmail')
-        except KeyError as exc:
+        except KeyError:
             self.logger.exception("Key Error")
 
     def is_relevant(self, package):
