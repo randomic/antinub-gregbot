@@ -8,10 +8,12 @@ they are sent by a jid in the config.JABBER_SERVERS['relay_from'] list
 '''
 import logging
 
-from slixmpp import ClientXMPP
+from datetime import datetime
 
+from slixmpp import ClientXMPP
 from utils.messaging import paginate
 from config import JABBER
+from discord.embeds import Embed
 
 
 def setup(bot):
@@ -60,16 +62,37 @@ class Jabber:
             self.last_msg = raw_msg
             self.logger.info('Relaying message from %s',
                              package['msg']['from'].bare)
-            body = package['msg']['body']
-            aff = ('```\n'+package['affix']) if package['affix'] else '```'
-            r_message = paginate(body, aff=aff)
-            for channelid in package['forward_to']:
-                channel = self.bot.get_channel(channelid)
-                for page in r_message:
-                    await self.bot.send_message(channel, page)
+            r_message = paginate(package['msg']['body'], aff='', pref='',
+                                 max_length=1900)
+            pref = package['prefix'] if package['prefix'] else None
+            for page in r_message:
+                if r_message.index(page):
+                    pref = None
+                embed = self.ping_embed(package, page, r_message)
+                for channelid in package['forward_to']:
+                    channel = self.bot.get_channel(channelid)
+                    await self.bot.send_message(channel, embed=embed,
+                                                content=pref)
         else:
             self.logger.info('Ignored duplicate message from %s',
                              package['msg']['from'].bare)
+
+    def ping_embed(self, package, message, r_message):
+        'Formats and generates the embed for the ping'
+        embed = Embed()
+        totalmsgs = len(r_message)
+        currentmsg = r_message.index(message)
+
+        if not currentmsg:
+            embed.title = package['msg']['from'].bare
+            embed.set_author(name=package['description'])
+
+        embed.description = message
+        embed.set_thumbnail(url=package['logo_url'])
+        embed.set_footer(text='Message {}/{}'.format(currentmsg+1, totalmsgs))
+        embed.timestamp = datetime.now()
+
+        return embed
 
     def __unload(self):
         for xmpp_relay in self.xmpp_relays:
@@ -108,7 +131,9 @@ class XmppRelay(ClientXMPP):
                 package = {
                     "msg": msg,
                     "forward_to": self.jabber_server['forward_to'],
-                    "affix": self.jabber_server['affix']
+                    "description": self.jabber_server['description'],
+                    "prefix": self.jabber_server['prefix'],
+                    "logo_url": self.jabber_server['logo_url']
                     }
                 self.bot.dispatch('broadcast', package)
             else:
