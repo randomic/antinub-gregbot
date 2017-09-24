@@ -7,10 +7,10 @@ It will then listen on those servers and relay any messages received if
 they are sent by a jid in the config.JABBER_SERVERS['relay_from'] list
 '''
 import logging
-
 from datetime import datetime
 
-from slixmpp import ClientXMPP
+import aioxmpp
+
 from utils.messaging import paginate
 from config import JABBER
 from discord.embeds import Embed
@@ -35,18 +35,18 @@ class Jabber:
     def create_clients(self, xmpp_servers):
         'Creates an XmppRelay client for each server specified'
         for server in xmpp_servers:
-            self.xmpp_relays.append(XmppRelay(self, server))
+            self.xmpp_relays.append(XmppRelay(self, server, self.logger))
 
     def get_health(self):
         'Returns a string describing the status of this cog'
         if self.xmpp_relays:
             response = ''
             for xmpp_relay in self.xmpp_relays:
-                if xmpp_relay.is_connected():
+                if xmpp_relay.established:
                     resp = '\n  \u2714 {} - Connected'
                 else:
                     resp = '\n  \u2716 {} - Disconnected'
-                response += resp.format(xmpp_relay.boundjid.host)
+                response += resp.format(xmpp_relay.local_jid)
         else:
             response = '\n  \u2716 No relays initialised'
         return response
@@ -99,33 +99,32 @@ class Jabber:
             xmpp_relay.disconnect()
 
 
-class XmppRelay(ClientXMPP):
+class XmppRelay(aioxmpp.PresenceManagedClient):
     '''Connects to an XMPP server and relays broadcasts
     to a specified discord channel'''
-    def __init__(self, cog, jabber_server):
-        ClientXMPP.__init__(self,
-                            jabber_server['jabber_id'],
-                            jabber_server['password'])
+    def __init__(self, cog, jabber_server, logger):
+        super(XmppRelay, self).__init__(
+            self,
+            jabber_server['jabber_id'],
+            aioxmpp.make_security_layer(jabber_server['password']),
+            logger=logger
+        )
 
-        self.logger = cog.logger
         self.bot = cog.bot
         self.relay_from = jabber_server['relay_from']
         self.jabber_server = jabber_server
 
-        self.add_event_handler('session_start', self.session_start)
-        self.add_event_handler('message', self.message)
+        self.stream.register_message_callback(
+            aioxmpp.MessageType.CHAT,
+            None,
+            self.message_receieved
+        )
 
-        if self.connect():
-            self.process()
+        self.presence = aioxmpp.PresenceState(True, 'away')
 
-    def session_start(self, dummy_event=None):
-        'Follow standard xmpp protocol after connecting to the server'
-        self.send_presence(ptype='away')
-        self.get_roster()
-
-    async def message(self, msg):
+    def message_receieved(self, msg):
         'Pass messages from specified senders to the cog for relaying'
-        if msg['type'] == 'chat':
+        if msg.type == aioxmpp.MessageType.CHAT:
             sender = msg['from'].bare
             if sender in self.relay_from:
                 package = {
@@ -139,4 +138,4 @@ class XmppRelay(ClientXMPP):
             else:
                 self.logger.info('Ignored message from %s', sender)
         else:
-            self.logger.info('Ignored message of type %s', msg['type'])
+            self.logger.info('Ignored message of type %s', msg.type)
