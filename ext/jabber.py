@@ -35,7 +35,7 @@ class Jabber:
     def create_clients(self, xmpp_servers):
         'Creates an XmppRelay client for each server specified'
         for server in xmpp_servers:
-            self.xmpp_relays.append(XmppRelay(self, server, self.logger))
+            self.xmpp_relays.append(XmppRelay(self.bot, server, self.logger))
 
     def get_health(self):
         'Returns a string describing the status of this cog'
@@ -96,13 +96,13 @@ class Jabber:
 
     def __unload(self):
         for xmpp_relay in self.xmpp_relays:
-            xmpp_relay.disconnect()
+            xmpp_relay.presence = aioxmpp.PresenceState(False)
 
 
 class XmppRelay(aioxmpp.PresenceManagedClient):
     '''Connects to an XMPP server and relays broadcasts
     to a specified discord channel'''
-    def __init__(self, cog, jabber_server, logger):
+    def __init__(self, bot, jabber_server, logger):
         super(XmppRelay, self).__init__(
             self,
             jabber_server['jabber_id'],
@@ -110,7 +110,7 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
             logger=logger
         )
 
-        self.bot = cog.bot
+        self.bot = bot
         self.relay_from = jabber_server['relay_from']
         self.jabber_server = jabber_server
 
