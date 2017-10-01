@@ -123,14 +123,28 @@ class Killmails:
         if value >= self.conf['others_value'] and self.conf['others_value']:
             return True
 
-        victim_corp = str(package['victim']['corporation']['id'])
+        try:
+            old_format = False
+            killmail = package['killmail']
+        except KeyError:  # zkb pls
+            self.logger.info('Old package format')
+            old_format = True
+            killmail = package
+
+        if old_format:
+            victim_corp = str(killmail['victim']['corporation']['id'])
+        else:
+            victim_corp = str(killmail['victim']['corporation_id'])
         if victim_corp in self.conf['corp_ids']:
             if value >= self.conf['corp_ids'][victim_corp]:
                 return True
 
-        for attacker in package['attackers']:
+        for attacker in killmail['attackers']:
             if 'corporation' in attacker:
-                attacker_corp = str(attacker['corporation']['id'])
+                if old_format:
+                    attacker_corp = str(attacker['corporation']['id'])
+                else:
+                    attacker_corp = str(attacker['corporation_id'])
                 if attacker_corp in self.conf['corp_ids']:
                     if value >= self.conf['corp_ids'][attacker_corp]:
                         return True
@@ -140,7 +154,11 @@ class Killmails:
     async def fetch_crest_info(self, package):
         'Fills in potentially missing information from CREST api'
         zkb = package['zkb']  # The zkb specific part of the package
-        async with self.session.get(zkb['href']) as resp:
+        url = 'https://crest-tq.eveonline.com/killmails/{}/{}/'.format(
+            package['killID'],
+            zkb['hash']
+        )
+        async with self.session.get(url) as resp:
             if resp.status == 200:
                 crest_data = await resp.json()
                 crest_data['zkb'] = zkb
