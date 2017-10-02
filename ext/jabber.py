@@ -53,7 +53,7 @@ class Jabber:
 
     async def on_broadcast(self, package):
         'Relay message to discord, ignore if it is a duplicate'
-        body = package['msg']['body']
+        body = package['body']
 
         idx = body.rfind('Broadcast sent at ')
         raw_msg = body[:idx] if idx > 0 else body
@@ -61,8 +61,8 @@ class Jabber:
         if raw_msg != self.last_msg:
             self.last_msg = raw_msg
             self.logger.info('Relaying message from %s',
-                             package['msg']['from'].bare)
-            r_message = paginate(package['msg']['body'], aff='', pref='',
+                             package['sender'])
+            r_message = paginate(package['body'], aff='', pref='',
                                  max_length=1900)
             pref = package['prefix'] if package['prefix'] else None
             for page in r_message:
@@ -75,7 +75,7 @@ class Jabber:
                                                 content=pref)
         else:
             self.logger.info('Ignored duplicate message from %s',
-                             package['msg']['from'].bare)
+                             package['sender'])
 
     def ping_embed(self, package, message, r_message):
         'Formats and generates the embed for the ping'
@@ -84,7 +84,7 @@ class Jabber:
         currentmsg = r_message.index(message)
 
         if not currentmsg:
-            embed.title = package['msg']['from'].bare
+            embed.title = package['sender']
             embed.set_author(name=package['description'])
 
         embed.description = message
@@ -104,17 +104,21 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
     to a specified discord channel'''
     def __init__(self, bot, jabber_server, logger):
         super(XmppRelay, self).__init__(
-            self,
-            jabber_server['jabber_id'],
-            aioxmpp.make_security_layer(jabber_server['password']),
+            aioxmpp.JID.fromstr(jabber_server['jabber_id']),
+            aioxmpp.make_security_layer(jabber_server['password'], no_verify=True),
             logger=logger
         )
 
         self.bot = bot
         self.relay_from = jabber_server['relay_from']
         self.jabber_server = jabber_server
+        self.languages = [aioxmpp.structs.LanguageRange.fromstr('en')]
+        self.summon(aioxmpp.DiscoServer)
 
-        self.stream.register_message_callback(
+        message_dispatcher = self.summon(
+            aioxmpp.dispatcher.SimpleMessageDispatcher
+        )
+        message_dispatcher.register_callback(
             aioxmpp.MessageType.CHAT,
             None,
             self.message_receieved
@@ -122,20 +126,19 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
 
         self.presence = aioxmpp.PresenceState(True, 'away')
 
-    def message_receieved(self, msg):
+    def message_receieved(self, message):
         'Pass messages from specified senders to the cog for relaying'
-        if msg.type == aioxmpp.MessageType.CHAT:
-            sender = msg['from'].bare
-            if sender in self.relay_from:
-                package = {
-                    "msg": msg,
-                    "forward_to": self.jabber_server['forward_to'],
-                    "description": self.jabber_server['description'],
-                    "prefix": self.jabber_server['prefix'],
-                    "logo_url": self.jabber_server['logo_url']
-                    }
-                self.bot.dispatch('broadcast', package)
-            else:
-                self.logger.info('Ignored message from %s', sender)
+        sender = str(message.from_.bare())
+        self.logger.debug('Recieved message from %s', sender)
+        if sender in self.relay_from:
+            package = {
+                'body': message.body.lookup(self.languages),
+                'sender': sender,
+                'forward_to': self.jabber_server['forward_to'],
+                'description': self.jabber_server['description'],
+                'prefix': self.jabber_server['prefix'],
+                'logo_url': self.jabber_server['logo_url']
+            }
+            self.bot.dispatch('broadcast', package)
         else:
-            self.logger.info('Ignored message of type %s', msg.type)
+            self.logger.info('Ignored message from %s', sender)
