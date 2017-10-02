@@ -46,7 +46,7 @@ class Jabber:
                     resp = '\n  \u2714 {} - Connected'
                 else:
                     resp = '\n  \u2716 {} - Disconnected'
-                response += resp.format(xmpp_relay.local_jid)
+                response += resp.format(xmpp_relay.local_jid.domain)
         else:
             response = '\n  \u2716 No relays initialised'
         return response
