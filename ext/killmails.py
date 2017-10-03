@@ -35,7 +35,7 @@ class Killmails:
         self.session = ClientSession(connector=connector)
         self.channel = self.bot.get_channel(self.conf['channel_id'])
 
-        self.format_tracker = {'old': 0, 'new': 0}
+        self.format_tracker = {'old': 0, 'total': 0}
 
         self.start_listening()
 
@@ -49,7 +49,7 @@ class Killmails:
         else:
             ret_string = '\n  \u2716 Not listening {}% Old Format'
         old = self.format_tracker['old']
-        total = old + self.format_tracker['new']
+        total = self.format_tracker['total']
         percentage = 100 * old / max(total, 1)
         return ret_string.format(percentage)
 
@@ -129,14 +129,14 @@ class Killmails:
         if value >= self.conf['others_value'] and self.conf['others_value']:
             return True
 
+        self.format_tracker['total'] += 1
         try:
-            self.format_tracker['new'] += 1
-            old_format = False
             killmail = package['killmail']
+            old_format = False
         except KeyError:  # zkb pls
-            self.format_tracker['old'] += 1
-            old_format = True
             killmail = package
+            old_format = True
+            self.format_tracker['old'] += 1
 
         if old_format:
             victim_corp = str(killmail['victim']['corporation']['id'])
