@@ -51,7 +51,7 @@ class Killmails:
         old = self.format_tracker['old']
         total = old + self.format_tracker['new']
         percentage = 100 * old / max(total, 1)
-        ret_string.format(percentage)
+        return ret_string.format(percentage)
 
     def start_listening(self, delay=0):
         'Start the listen loop and add the recovery callback'
