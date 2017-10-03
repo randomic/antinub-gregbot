@@ -10,6 +10,7 @@ import logging
 from datetime import datetime
 
 import aioxmpp
+from aioxmpp.structs import LanguageRange
 
 from utils.messaging import paginate
 from config import JABBER
@@ -112,7 +113,7 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
         self.bot = bot
         self.relay_from = jabber_server['relay_from']
         self.jabber_server = jabber_server
-        self.languages = [aioxmpp.structs.LanguageRange.fromstr('en')]
+        self.languages = [LanguageRange(tag='en'), LanguageRange.WILDCARD]
         self.summon(aioxmpp.DiscoServer)
 
         message_dispatcher = self.summon(
@@ -130,15 +131,16 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
         'Pass messages from specified senders to the cog for relaying'
         sender = str(message.from_.bare())
         self.logger.debug('Recieved message from %s', sender)
-        if sender in self.relay_from:
-            package = {
-                'body': message.body.lookup(self.languages),
-                'sender': sender,
-                'forward_to': self.jabber_server['forward_to'],
-                'description': self.jabber_server['description'],
-                'prefix': self.jabber_server['prefix'],
-                'logo_url': self.jabber_server['logo_url']
-            }
-            self.bot.dispatch('broadcast', package)
-        else:
-            self.logger.info('Ignored message from %s', sender)
+        if not message.body:
+            return self.logger.info('Ignored empty message from %s', sender)
+        if sender not in self.relay_from:
+            return self.logger.info('Ignored message from %s', sender)
+        package = {
+            'body': message.body.lookup(self.languages),
+            'sender': sender,
+            'forward_to': self.jabber_server['forward_to'],
+            'description': self.jabber_server['description'],
+            'prefix': self.jabber_server['prefix'],
+            'logo_url': self.jabber_server['logo_url']
+        }
+        self.bot.dispatch('broadcast', package)
