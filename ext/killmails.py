@@ -35,6 +35,8 @@ class Killmails:
         self.session = ClientSession(connector=connector)
         self.channel = self.bot.get_channel(self.conf['channel_id'])
 
+        self.format_tracker = {'old': 0, 'new': 0}
+
         self.start_listening()
 
     def __unload(self):
@@ -43,9 +45,13 @@ class Killmails:
     def get_health(self):
         'Returns a string describing the status of this cog'
         if not self.zkb_listener.done():
-            return '\n  \u2714 Listening'
-
-        return '\n  \u2716 Not listening'
+            ret_string = '\n  \u2714 Listening {}% Old Format'
+        else:
+            ret_string = '\n  \u2716 Not listening {}% Old Format'
+        old = self.format_tracker['old']
+        total = old + self.format_tracker['new']
+        percentage = 100 * old / max(total, 1)
+        ret_string.format(percentage)
 
     def start_listening(self, delay=0):
         'Start the listen loop and add the recovery callback'
@@ -124,10 +130,11 @@ class Killmails:
             return True
 
         try:
+            self.format_tracker['new'] += 1
             old_format = False
             killmail = package['killmail']
         except KeyError:  # zkb pls
-            self.logger.info('Old package format')
+            self.format_tracker['old'] += 1
             old_format = True
             killmail = package
 
