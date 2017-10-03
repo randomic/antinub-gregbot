@@ -115,6 +115,7 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
         self.jabber_server = jabber_server
         self.languages = [LanguageRange(tag='en'), LanguageRange.WILDCARD]
         self.summon(aioxmpp.DiscoServer)
+        self.summon(aioxmpp.RosterClient)
 
         message_dispatcher = self.summon(
             aioxmpp.dispatcher.SimpleMessageDispatcher
