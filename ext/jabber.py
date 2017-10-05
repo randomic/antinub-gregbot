@@ -121,14 +121,12 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
             aioxmpp.dispatcher.SimpleMessageDispatcher
         )
         message_dispatcher.register_callback(
-            aioxmpp.MessageType.CHAT,
+            None,
             None,
             self.message_receieved
         )
 
-        presence_server = self.summon(aioxmpp.PresenceServer)
-        state = aioxmpp.PresenceState(True, 'away')
-        presence_server.set_presence(state, priority=100)
+        self.presence = aioxmpp.PresenceState(True, aioxmpp.PresenceShow.AWAY)
 
     def message_receieved(self, message):
         'Pass messages from specified senders to the cog for relaying'
