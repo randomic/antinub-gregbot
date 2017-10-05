@@ -139,7 +139,6 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
             urlopen(self.jabber_server['logo_url'])
         )
         colour = colour_thief.get_color(1)
-        print(colour)
         return Colour((colour[0] << 16) + (colour[1] << 8) + colour[2])
 
     def message_receieved(self, message):
@@ -187,7 +186,10 @@ class SaturatedColourThief(ColourThief):
                 valid_pixels.append((red, green, blue))
 
         if not valid_pixels:  # Fall back to original method.
-            super(SaturatedColourThief, self).get_palette(color_count, quality)
+            palette = super(SaturatedColourThief, self).get_palette(
+                color_count, quality
+            )
+            return palette
 
         # Send array to quantize function which clusters values
         # using median cut algorithm
