@@ -8,13 +8,17 @@ they are sent by a jid in the config.JABBER_SERVERS['relay_from'] list
 '''
 import logging
 from datetime import datetime
+from urllib.request import urlopen
 
 import aioxmpp
 from aioxmpp.structs import LanguageRange
+from discord.embeds import Embed
+from discord import Colour
+from colorthief import ColorThief as ColourThief
+from colorthief import MMCQ
 
 from utils.messaging import paginate
 from config import JABBER
-from discord.embeds import Embed
 
 
 def setup(bot):
@@ -92,6 +96,7 @@ class Jabber:
         embed.set_thumbnail(url=package['logo_url'])
         embed.set_footer(text='Message {}/{}'.format(currentmsg+1, totalmsgs))
         embed.timestamp = datetime.now()
+        embed.colour = package['embed_colour']
 
         return embed
 
@@ -113,6 +118,7 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
         self.bot = bot
         self.relay_from = jabber_server['relay_from']
         self.jabber_server = jabber_server
+        self.embed_colour = self.get_embed_colour()
         self.languages = [LanguageRange(tag='en'), LanguageRange.WILDCARD]
         self.summon(aioxmpp.DiscoServer)
         self.summon(aioxmpp.RosterClient)
@@ -128,12 +134,20 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
 
         self.presence = aioxmpp.PresenceState(True, aioxmpp.PresenceShow.AWAY)
 
+    def get_embed_colour(self):
+        colour_thief = SaturatedColourThief(
+            urlopen(self.jabber_server['logo_url'])
+        )
+        colour = colour_thief.get_color(1)
+        print(colour)
+        return Colour((colour[0] << 16) + (colour[1] << 8) + colour[2])
+
     def message_receieved(self, message):
         'Pass messages from specified senders to the cog for relaying'
         sender = str(message.from_.bare())
         self.logger.debug('Recieved message from %s', sender)
         if not message.body:
-            return self.logger.info('Ignored empty message from %s', sender)
+            return self.logger.debug('Ignored empty message from %s', sender)
         if sender not in self.relay_from:
             return self.logger.info('Ignored message from %s', sender)
         package = {
@@ -142,6 +156,40 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
             'forward_to': self.jabber_server['forward_to'],
             'description': self.jabber_server['description'],
             'prefix': self.jabber_server['prefix'],
-            'logo_url': self.jabber_server['logo_url']
+            'logo_url': self.jabber_server['logo_url'],
+            'embed_colour': self.embed_colour
         }
         self.bot.dispatch('broadcast', package)
+
+
+class SaturatedColourThief(ColourThief):
+    def get_palette(self, color_count=10, quality=10):
+        image = self.image.convert('RGBA')
+        width, height = image.size
+        pixels = image.getdata()
+        pixel_count = width * height
+        valid_pixels = []
+        for i in range(0, pixel_count, quality):
+            red, green, blue, alpha = pixels[i]
+
+            if alpha < 125:  # Skip pixels with high alpha
+                continue
+            max_rgb = max(red, green, blue) / 255.0
+            min_rgb = min(red, green, blue) / 255.0
+            lightness = 0.5 * (max_rgb + min_rgb)
+            if lightness <= 0.1 or lightness > 0.9:
+                continue  # Skip very dark/light pixels
+            if lightness <= 0.5:
+                saturation = (max_rgb - min_rgb) / (2 * lightness)
+            else:
+                saturation = (max_rgb - min_rgb) / (2 - 2 * lightness)
+            if saturation > 0.5:  # Skip 'greyscale' pixels
+                valid_pixels.append((red, green, blue))
+
+        if not valid_pixels:  # Fall back to original method.
+            super(SaturatedColourThief, self).get_palette(color_count, quality)
+
+        # Send array to quantize function which clusters values
+        # using median cut algorithm
+        cmap = MMCQ.quantize(valid_pixels, color_count)
+        return cmap.palette
