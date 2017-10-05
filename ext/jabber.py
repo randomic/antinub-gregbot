@@ -58,7 +58,7 @@ class Jabber:
 
     async def on_broadcast(self, package):
         'Relay message to discord, ignore if it is a duplicate'
-        body = package['body']
+        body = package['body'].replace(' || ', '\n')
 
         idx = body.rfind('Broadcast sent at ')
         raw_msg = body[:idx] if idx > 0 else body
@@ -67,7 +67,7 @@ class Jabber:
             self.last_msg = raw_msg
             self.logger.info('Relaying message from %s',
                              package['sender'])
-            r_message = paginate(package['body'], aff='', pref='',
+            r_message = paginate(body, aff='', pref='',
                                  max_length=1900)
             pref = package['prefix'] if package['prefix'] else None
             for page in r_message:
