@@ -68,10 +68,12 @@ class Jabber:
             self.logger.info('Relaying message from %s',
                              package['sender'])
             paginate = Paginate(body, enclose=('', ''), page_size=1900)
-            pref = package['prefix'] if package['prefix'] else None
             for page in paginate:
-                if paginate.pages_yielded:
+                if paginate.pages_yielded == 1:
+                    pref = package['prefix'] if package['prefix'] else None
+                else:
                     pref = None  # Only show prefix on first page.
+
                 embed = self.ping_embed(package, page, paginate)
                 for channelid in package['forward_to']:
                     channel = self.bot.get_channel(channelid)
@@ -88,7 +90,7 @@ class Jabber:
         currentmsg = paginate.pages_yielded
         totalmsgs = currentmsg + paginate.pages_left
 
-        if not currentmsg:
+        if currentmsg == 1:
             embed.title = package['sender']
             embed.set_author(name=package['description'])
 
