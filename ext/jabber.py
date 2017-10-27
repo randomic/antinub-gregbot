@@ -17,7 +17,7 @@ from discord import Colour
 from colorthief import ColorThief as ColourThief
 from colorthief import MMCQ
 
-from utils.messaging import paginate
+from utils.messaging import Paginate
 from config import JABBER
 
 
@@ -67,13 +67,12 @@ class Jabber:
             self.last_msg = raw_msg
             self.logger.info('Relaying message from %s',
                              package['sender'])
-            r_message = paginate(body, aff='', pref='',
-                                 max_length=1900)
+            paginate = Paginate(body, enclose=('', ''), page_size=1900)
             pref = package['prefix'] if package['prefix'] else None
-            for page in r_message:
-                if r_message.index(page):
-                    pref = None
-                embed = self.ping_embed(package, page, r_message)
+            for page in paginate:
+                if paginate.pages_yielded:
+                    pref = None  # Only show prefix on first page.
+                embed = self.ping_embed(package, page, paginate)
                 for channelid in package['forward_to']:
                     channel = self.bot.get_channel(channelid)
                     await self.bot.send_message(channel, embed=embed,
@@ -82,11 +81,12 @@ class Jabber:
             self.logger.info('Ignored duplicate message from %s',
                              package['sender'])
 
-    def ping_embed(self, package, message, r_message):
+    @staticmethod
+    def ping_embed(package, message, paginate):
         'Formats and generates the embed for the ping'
         embed = Embed()
-        totalmsgs = len(r_message)
-        currentmsg = r_message.index(message)
+        currentmsg = paginate.pages_yielded
+        totalmsgs = currentmsg + paginate.pages_left
 
         if not currentmsg:
             embed.title = package['sender']
@@ -94,7 +94,10 @@ class Jabber:
 
         embed.description = message
         embed.set_thumbnail(url=package['logo_url'])
-        embed.set_footer(text='Message {}/{}'.format(currentmsg+1, totalmsgs))
+        if totalmsgs > 0:
+            embed.set_footer(
+                text='Message {}/{}'.format(currentmsg+1, totalmsgs)
+            )
         embed.timestamp = datetime.now()
         embed.colour = package['embed_colour']
 
