@@ -35,8 +35,6 @@ class Killmails:
         self.session = ClientSession(connector=connector)
         self.channel = self.bot.get_channel(self.conf['channel_id'])
 
-        self.format_tracker = {'old': 0, 'total': 0}
-
         self.start_listening()
 
     def __unload(self):
@@ -45,13 +43,9 @@ class Killmails:
     def get_health(self):
         'Returns a string describing the status of this cog'
         if not self.zkb_listener.done():
-            ret_string = '\n  \u2714 Listening {}% Old Format'
-        else:
-            ret_string = '\n  \u2716 Not listening {}% Old Format'
-        old = self.format_tracker['old']
-        total = self.format_tracker['total']
-        percentage = 100 * old / max(total, 1)
-        return ret_string.format(percentage)
+            return '\n  \u2714 Listening'
+
+        return '\n  \u2716 Not listening'
 
     def start_listening(self, delay=0):
         'Start the listen loop and add the recovery callback'
@@ -132,29 +126,16 @@ class Killmails:
         if value >= self.conf['others_value'] and self.conf['others_value']:
             return True
 
-        self.format_tracker['total'] += 1
-        try:
-            killmail = package['killmail']
-            old_format = False
-        except KeyError:  # zkb pls
-            killmail = package
-            old_format = True
-            self.format_tracker['old'] += 1
+        killmail = package  # TODO: Remove after converting to ESI.
 
-        if old_format:
-            victim_corp = str(killmail['victim']['corporation']['id'])
-        else:
-            victim_corp = str(killmail['victim']['corporation_id'])
+        victim_corp = str(killmail['victim']['corporation']['id'])
         if victim_corp in self.conf['corp_ids']:
             if value >= self.conf['corp_ids'][victim_corp]:
                 return True
 
         for attacker in killmail['attackers']:
             if 'corporation' in attacker:
-                if old_format:
-                    attacker_corp = str(attacker['corporation']['id'])
-                else:
-                    attacker_corp = str(attacker['corporation_id'])
+                attacker_corp = str(attacker['corporation']['id'])
                 if attacker_corp in self.conf['corp_ids']:
                     if value >= self.conf['corp_ids'][attacker_corp]:
                         return True
