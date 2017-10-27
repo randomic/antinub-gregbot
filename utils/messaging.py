@@ -28,13 +28,14 @@ async def notify_owner(bot, messages):
 
 
 async def message_input(ctx, prompt, timeout=60):
+    'Prompt user for input and wait for response or timeout'
     message = await ctx.bot.say(prompt)
-    password = await ctx.bot.wait_for_message(
+    user_input = await ctx.bot.wait_for_message(
         timeout=timeout,
         author=ctx.message.author,
         channel=ctx.message.channel)
-    if not password:
+    if not user_input:
         await ctx.bot.edit_message(
             message,
             new_content='Timed out, cancelling.')
-    return password
+    return user_input
