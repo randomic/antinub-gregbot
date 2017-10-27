@@ -167,17 +167,16 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
 class SaturatedColourThief(ColourThief):
     def get_palette(self, color_count=10, quality=10):
         image = self.image.convert('RGBA')
-        width, height = image.size
         pixels = image.getdata()
-        pixel_count = width * height
+        pixel_count = image.size[0] * image.size[1]
         valid_pixels = []
         for i in range(0, pixel_count, quality):
-            red, green, blue, alpha = pixels[i]
+            # red, green, blue, alpha = pixels[i]
 
-            if alpha < 125:  # Skip pixels with high alpha
+            if pixels[i][3] < 125:  # Skip pixels with high alpha
                 continue
-            max_rgb = max(red, green, blue) / 255.0
-            min_rgb = min(red, green, blue) / 255.0
+            max_rgb = max(pixels[i][:3]) / 255.0
+            min_rgb = min(pixels[i][:3]) / 255.0
             lightness = 0.5 * (max_rgb + min_rgb)
             if lightness <= 0.1 or lightness > 0.9:
                 continue  # Skip very dark/light pixels
@@ -186,7 +185,7 @@ class SaturatedColourThief(ColourThief):
             else:
                 saturation = (max_rgb - min_rgb) / (2 - 2 * lightness)
             if saturation > 0.5:  # Skip 'greyscale' pixels
-                valid_pixels.append((red, green, blue))
+                valid_pixels.append(pixels[i][:3])
 
         if not valid_pixels:  # Fall back to original method.
             palette = super(SaturatedColourThief, self).get_palette(
