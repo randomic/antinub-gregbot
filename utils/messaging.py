@@ -14,29 +14,37 @@ class Paginate:
         self._size = page_size - len(self._prefix) - len(self._affix)
         self._separator = separator
 
-        self._seek = 0
+        self._r_seek = len(string)
         self._pages_yielded = 0
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if self._seek < len(self._string):
-            split = self._string.rfind(
-                self._separator, self._seek, self._seek + self._size
-            ) + 1
-            if split:
-                string = self._wrap_string(self._seek, self._seek + split)
-                self._seek += split
-            else:
-                string = self._wrap_string(self._seek, self._seek + self._size)
-                self._seek += self._size
-            self._pages_yielded += 1
-            return string
-        else:
+        if self._r_seek <= 0:
             raise StopIteration()
 
-    def _wrap_string(self, start, stop):
+        self._pages_yielded += 1
+        if self._r_seek <= self._size:
+            string = self._wrap_string(-self._r_seek)
+            self._r_seek = 0
+            return string
+
+        split = self._string.rfind(
+            self._separator, -self._r_seek, self._size - self._r_seek
+        ) + 1
+        if split:
+            string = self._wrap_string(-self._r_seek, split)
+            self._r_seek -= len(string) - len(self._prefix) - len(self._affix)
+        else:
+            string = self._wrap_string(
+                -self._r_seek, self._size - self._r_seek
+            )
+            self._r_seek -= self._size
+
+        return string
+
+    def _wrap_string(self, start, stop=None):
         return self._prefix + self._string[start:stop] + self._affix
 
     def prefix_next(self, prefix):
@@ -55,7 +63,7 @@ class Paginate:
     @property
     def pages_left(self):
         'Return number of remaining pages if the iterator is called normally'
-        return ceil((len(self._string) - self._seek) / self._size)
+        return ceil(self._r_seek / self._size)
 
 
 async def notify_owner(bot, messages):
