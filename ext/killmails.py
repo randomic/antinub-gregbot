@@ -15,7 +15,7 @@ from discord import Colour
 from discord.embeds import Embed
 
 from config import KILLMAILS
-from utils.messaging import notify_owner, paginate
+from utils.messaging import notify_owner, Paginate
 
 
 class Killmails:
@@ -93,9 +93,12 @@ class Killmails:
     async def error_to_admins(self, exc_info):
         'Pass on the error which caused the loop to break to admins'
         message = 'Error in killmail retrieve loop:'
-        traceback = paginate(''.join(format_exception(*exc_info)),
-                             '```Python\n')
-        await notify_owner(self.bot, [message, *traceback])
+        paginate = Paginate(
+            ''.join(format_exception(*exc_info)),
+            enclose=('```Python\n', '```')
+        )
+        notification = [paginate.prefix_next(message)] + list(paginate)
+        await notify_owner(self.bot, notification)
 
     async def wait_for_package(self):
         'Returns a dictionary containing the contents of the redisQ package'
