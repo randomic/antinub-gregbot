@@ -94,9 +94,9 @@ class Jabber:
 
         embed.description = message
         embed.set_thumbnail(url=package['logo_url'])
-        if totalmsgs > 0:
+        if totalmsgs > 1:
             embed.set_footer(
-                text='Message {}/{}'.format(currentmsg+1, totalmsgs)
+                text='Message {}/{}'.format(currentmsg, totalmsgs)
             )
         embed.timestamp = datetime.now()
         embed.colour = package['embed_colour']
