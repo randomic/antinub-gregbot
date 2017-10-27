@@ -11,7 +11,7 @@ from traceback import format_exception
 import discord.ext.commands as commands
 
 import utils.checks as checks
-from utils.messaging import paginate, notify_owner
+from utils.messaging import Paginate, notify_owner
 
 
 def setup(bot):
@@ -30,20 +30,23 @@ class Control:
         self.bot.on_error = self.on_error
         self.last_error = []
 
-    async def on_error(self, event, *dummy_args, **dummy_kwargs):
-        'Assign a handler for errors raised by events'
-        exc_info = sys.exc_info()
-        self.logger.error("Exception in '%s' event",
-                          event,
-                          exc_info=exc_info)
-        message = "Exception in '{}' event".format(event)
-        traceback = paginate(''.join(format_exception(*exc_info)),
-                             '```Python\n')
-        notification = [message, *traceback]
+    async def error_notification(self, message, exc_info):
+        'Send an error notification to the bot owner'
+        paginate = Paginate(
+            ''.join(format_exception(*exc_info)), ('```Python\n', '```')
+        )
+        notification = [paginate.prefix_next(message)] + list(paginate)
 
         if notification != self.last_error:
             await notify_owner(self.bot, notification)
             self.last_error = notification
+
+    async def on_error(self, event, *dummy_args, **dummy_kwargs):
+        'Assign a handler for errors raised by events'
+        message = "Exception in '{}' event:".format(event)
+        exc_info = sys.exc_info()
+        self.logger.error(message, exc_info=exc_info)
+        self.error_notification(message, exc_info)
 
     async def on_command_error(self, exception, ctx):
         'Assign a handler for errors raised by commands'
@@ -56,18 +59,10 @@ class Control:
         elif isinstance(exception, commands.CommandNotFound):
             logger.debug(exception)
         else:
+            message = "Exception in '{}' command:".format(ctx.command)
             exc_info = (type(exception), exception, exception.__traceback__)
-            logger.error("Exception in '%s' command",
-                         ctx.command,
-                         exc_info=exc_info)
-            message = "Exception in '{}' command".format(ctx.command)
-            traceback = paginate(''.join(format_exception(*exc_info)),
-                                 '```Python\n')
-            notification = [message, *traceback]
-
-            if notification != self.last_error:
-                await notify_owner(self.bot, notification)
-                self.last_error = notification
+            logger.error(message, exc_info=exc_info)
+            self.error_notification(message, exc_info)
 
     @commands.command()
     @commands.check(checks.is_owner)
@@ -111,12 +106,12 @@ class Control:
             pref = pref_str.format(n_lines, logname)
             body = ''.join(lines)
 
-            if body:  # Only continue if there is anything to show
-                responses = paginate(body)
+            if body:  # Only continue if there is something to show
+                paginate = Paginate(body)
 
-                await self.bot.say(pref)
-                for response in responses:
-                    await self.bot.say(response)
+                await self.bot.say(paginate.prefix_next(pref))
+                for page in paginate:
+                    await self.bot.say(page)
             else:
                 await self.bot.say('Log is empty')
         except FileNotFoundError:
@@ -150,7 +145,7 @@ class Control:
             else:
                 response += '{}:\n  \u2716 No such extension\n'.format(name)
 
-        for page in paginate(response):
+        for page in Paginate(response):
             await self.bot.say(page)
 
     @commands.group(pass_context=True)
