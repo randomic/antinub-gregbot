@@ -21,20 +21,6 @@ class EFT:
         self.logger = logging.getLogger(__name__)
         self.bot = bot
     
-    
-    # @commands.command(pass_context=True)
-    # async def eft(self, context):
-        # content = context.message.content
-        # content_list = content.split(']',1)
-        
-        # content_list[0] = content_list[0].split(' ', 1)[1]
-        
-        
-        # embed = self.eftembed(content_list[0] + ']', content_list[1])
-        # await self.bot.send_message(context.message.channel, embed = embed)
-        # await self.bot.delete_message(context.message)
-        
-        
     async def on_message(self, message):
         content = str(message.content)
         p = re.compile('\[(.*?)\]\n(.*)', re.DOTALL)
