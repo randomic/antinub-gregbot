@@ -69,6 +69,7 @@ class Killmails:
                                       await self.fetch_crest_info(package))
                 else:
                     self.logger.debug('Got empty package')
+                await sleep(0.1)
         except CancelledError:
             await self.session.close()
             raise CancelledError
