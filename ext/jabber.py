@@ -65,20 +65,24 @@ class Jabber:
 
         if raw_msg != self.last_msg:
             self.last_msg = raw_msg
-            self.logger.info('Relaying message from %s',
-                             package['sender'])
+            self.logger.info(
+                'Relaying message from %s', package['sender']
+            )
+
+            embeds = []
             paginate = Paginate(body, enclose=('', ''), page_size=1900)
+            for page in paginate:
+                embed = self.ping_embed(package, page, paginate)
+                embeds.append(embed)
+
             for destination in package['destinations']:
                 channel = self.bot.get_channel(destination['channel_id'])
 
-                page = paginate.__next__()
-                embed = self.ping_embed(package, page, paginate)
+                embed = embeds[0]
                 await self.bot.send_message(
                     channel, embed=embed, content=destination.get('prefix')
                 )  # Only show prefix on first page.
-
-                for page in paginate:
-                    embed = self.ping_embed(package, page, paginate)
+                for embed in embeds[1:]:
                     await self.bot.send_message(channel, embed=embed)
         else:
             self.logger.info('Ignored duplicate message from %s',
