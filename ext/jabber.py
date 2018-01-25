@@ -68,17 +68,18 @@ class Jabber:
             self.logger.info('Relaying message from %s',
                              package['sender'])
             paginate = Paginate(body, enclose=('', ''), page_size=1900)
-            for page in paginate:
-                if paginate.pages_yielded == 1:
-                    pref = package['prefix'] if package['prefix'] else None
-                else:
-                    pref = None  # Only show prefix on first page.
+            for destination in package['destinations']:
+                channel = self.bot.get_channel(destination['channel_id'])
 
+                page = paginate.__next__()
                 embed = self.ping_embed(package, page, paginate)
-                for channelid in package['forward_to']:
-                    channel = self.bot.get_channel(channelid)
-                    await self.bot.send_message(channel, embed=embed,
-                                                content=pref)
+                await self.bot.send_message(
+                    channel, embed=embed, content=destination.get('prefix')
+                )  # Only show prefix on first page.
+
+                for page in paginate:
+                    embed = self.ping_embed(package, page, paginate)
+                    await self.bot.send_message(channel, embed=embed)
         else:
             self.logger.info('Ignored duplicate message from %s',
                              package['sender'])
@@ -157,9 +158,8 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
         package = {
             'body': message.body.lookup(self.languages),
             'sender': sender,
-            'forward_to': self.jabber_server['forward_to'],
+            'destinations': self.jabber_server['destinations'],
             'description': self.jabber_server['description'],
-            'prefix': self.jabber_server['prefix'],
             'logo_url': self.jabber_server['logo_url'],
             'embed_colour': self.embed_colour
         }
