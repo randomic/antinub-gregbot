@@ -67,17 +67,17 @@ class Jabber:
             self.last_msg = raw_msg
             self.logger.info('Relaying message from %s',
                              package['sender'])
-            paginated = list(Paginate(body, enclose=('', ''), page_size=1900))
+            paginate = Paginate(body, enclose=('', ''), page_size=1900)
             for destination in package['destinations']:
                 channel = self.bot.get_channel(destination['channel_id'])
 
-                page = paginated[0]
+                page = paginate.__next__()
                 embed = self.ping_embed(package, page, paginate)
                 await self.bot.send_message(
                     channel, embed=embed, content=destination.get('prefix')
                 )  # Only show prefix on first page.
 
-                for page in paginated[1:]:
+                for page in paginate:
                     embed = self.ping_embed(package, page, paginate)
                     await self.bot.send_message(channel, embed=embed)
         else:
