@@ -46,7 +46,7 @@ class Control:
         message = "Exception in '{}' event:".format(event)
         exc_info = sys.exc_info()
         self.logger.error(message, exc_info=exc_info)
-        self.error_notification(message, exc_info)
+        await self.error_notification(message, exc_info)
 
     async def on_command_error(self, exception, ctx):
         'Assign a handler for errors raised by commands'
