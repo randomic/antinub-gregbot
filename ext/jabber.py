@@ -17,7 +17,7 @@ from discord import Colour
 from colorthief import ColorThief as ColourThief
 from colorthief import MMCQ
 
-from utils.messaging import Paginate
+from utils.messaging import Paginate, notify_owner
 from config import JABBER
 
 
@@ -76,14 +76,21 @@ class Jabber:
                 embeds.append(embed)
 
             for destination in package['destinations']:
-                channel = self.bot.get_channel(destination['channel_id'])
+                channel_id = destination['channel_id']
+                channel = self.bot.get_channel(channel_id)
 
-                embed = embeds[0]
-                await self.bot.send_message(
-                    channel, embed=embed, content=destination.get('prefix')
-                )  # Only show prefix on first page.
-                for embed in embeds[1:]:
-                    await self.bot.send_message(channel, embed=embed)
+                if channel:
+                    embed = embeds[0]
+                    await self.bot.send_message(
+                        channel, embed=embed, content=destination.get('prefix')
+                    )  # Only show prefix on first page.
+                    for embed in embeds[1:]:
+                        await self.bot.send_message(channel, embed=embed)
+                else:
+                    notify_owner(
+                        self.bot,
+                        ['Invalid channel: {}'.format(channel_id)]
+                    )
         else:
             self.logger.info('Ignored duplicate message from %s',
                              package['sender'])
