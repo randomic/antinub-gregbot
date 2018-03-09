@@ -131,12 +131,11 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
         override_peer = []
         if len(config) > 1:
             port = config[1]
-            override_peer = (
+            override_peer = [(
                 jabber_id.domain,
                 port,
                 aioxmpp.connector.STARTTLSConnector()
-            )
-            logger.warn(override_peer)
+            )]
 
         super(XmppRelay, self).__init__(
             aioxmpp.JID.fromstr(jabber_server['jabber_id']),
