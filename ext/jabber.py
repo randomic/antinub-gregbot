@@ -87,7 +87,7 @@ class Jabber:
                     for embed in embeds[1:]:
                         await self.bot.send_message(channel, embed=embed)
                 else:
-                    notify_owner(
+                    await notify_owner(
                         self.bot,
                         ['Invalid channel: {}'.format(channel_id)]
                     )
