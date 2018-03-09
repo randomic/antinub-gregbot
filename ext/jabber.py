@@ -126,9 +126,22 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
     '''Connects to an XMPP server and relays broadcasts
     to a specified discord channel'''
     def __init__(self, bot, jabber_server, logger):
+        config = jabber_server['jabber_id'].split(':')
+        jabber_id = aioxmpp.JID.fromstr(config[0])
+        try:
+            port = config[1]
+            override_peer = (
+                jabber_id.domain,
+                port,
+                aioxmpp.connector.STARTTLSConnector()
+            )
+        except IndexError:
+            override_peer = []
+
         super(XmppRelay, self).__init__(
             aioxmpp.JID.fromstr(jabber_server['jabber_id']),
             aioxmpp.make_security_layer(jabber_server['password'], no_verify=True),
+            override_peer=override_peer,
             logger=logger
         )
 
