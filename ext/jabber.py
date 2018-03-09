@@ -128,15 +128,15 @@ class XmppRelay(aioxmpp.PresenceManagedClient):
     def __init__(self, bot, jabber_server, logger):
         config = jabber_server['jabber_id'].split(':')
         jabber_id = aioxmpp.JID.fromstr(config[0])
-        try:
+        override_peer = []
+        if len(config) > 1:
             port = config[1]
             override_peer = (
                 jabber_id.domain,
                 port,
                 aioxmpp.connector.STARTTLSConnector()
             )
-        except IndexError:
-            override_peer = []
+            logger.warn(override_peer)
 
         super(XmppRelay, self).__init__(
             aioxmpp.JID.fromstr(jabber_server['jabber_id']),
