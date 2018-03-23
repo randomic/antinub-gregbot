@@ -4,47 +4,19 @@ Main helper cog made for antinub-gregbot project.
 Contains several commands useful for controlling/debugging the bot
 '''
 import logging
-import os
 import sys
 from collections import deque
 from traceback import format_exception
 
 import discord.ext.commands as commands
 
-import config
 import utils.checks as checks
+from utils.messaging import Paginate, notify_owner
 
 
 def setup(bot):
     'Adds the cog to the provided discord bot'
     bot.add_cog(Control(bot))
-
-
-def paginate(string, pref='```\n', aff='```', max_length=2000, sep='\n'):
-    'Chops a string into even chunks of max_length around the given separator'
-    max_size = max_length - len(pref) - len(aff)
-
-    str_length = len(string)
-    if str_length <= max_size:
-        return [pref + string + aff]
-    else:
-        split = string.rfind(sep, 0, max_size) + 1
-        if split:
-            return ([pref + string[:split] + aff]
-                    + paginate(string[split:], pref, aff, max_length, sep))
-        else:
-            return ([pref + string[:max_size] + aff]
-                    + paginate(string[max_size:], pref, aff, max_length, sep))
-
-
-async def notify_admins(bot, messages):
-    'Send message to the private channel of each admin'
-    recipients = set(config.ADMINS)
-    recipients.add(config.OWNER_ID)  # Include owner if not already there
-    for user_id in recipients:
-        channel = await bot.get_user_info(user_id)
-        for message in messages:
-            await bot.send_message(channel, message)
 
 
 class Control:
@@ -58,20 +30,23 @@ class Control:
         self.bot.on_error = self.on_error
         self.last_error = []
 
-    async def on_error(self, event, *dummy_args, **dummy_kwargs):
-        'Assign a handler for errors raised by events'
-        exc_info = sys.exc_info()
-        self.logger.error("Exception in '%s' event",
-                          event,
-                          exc_info=exc_info)
-        message = "Exception in '{}' event".format(event)
-        traceback = paginate(''.join(format_exception(*exc_info)),
-                             '```Python\n')
-        notification = [message, *traceback]
+    async def error_notification(self, message, exc_info):
+        'Send an error notification to the bot owner'
+        paginate = Paginate(
+            ''.join(format_exception(*exc_info)), ('```Python\n', '```')
+        )
+        notification = [paginate.prefix_next(message)] + list(paginate)
 
         if notification != self.last_error:
-            await notify_admins(self.bot, notification)
+            await notify_owner(self.bot, notification)
             self.last_error = notification
+
+    async def on_error(self, event, *dummy_args, **dummy_kwargs):
+        'Assign a handler for errors raised by events'
+        message = "Exception in '{}' event:".format(event)
+        exc_info = sys.exc_info()
+        self.logger.error(message, exc_info=exc_info)
+        await self.error_notification(message, exc_info)
 
     async def on_command_error(self, exception, ctx):
         'Assign a handler for errors raised by commands'
@@ -84,18 +59,10 @@ class Control:
         elif isinstance(exception, commands.CommandNotFound):
             logger.debug(exception)
         else:
+            message = "Exception in '{}' command:".format(ctx.command)
             exc_info = (type(exception), exception, exception.__traceback__)
-            logger.error("Exception in '%s' command",
-                         ctx.command,
-                         exc_info=exc_info)
-            message = "Exception in '{}' command".format(ctx.command)
-            traceback = paginate(''.join(format_exception(*exc_info)),
-                                 '```Python\n')
-            notification = [message, *traceback]
-
-            if notification != self.last_error:
-                await notify_admins(self.bot, notification)
-                self.last_error = notification
+            logger.error(message, exc_info=exc_info)
+            self.error_notification(message, exc_info)
 
     @commands.command()
     @commands.check(checks.is_owner)
@@ -110,8 +77,8 @@ class Control:
         await self.bot.logout()
 
     @commands.command()
-    @commands.check(checks.is_admin)
-    async def log(self, logname: str='error', n_lines: int=10):
+    @commands.check(checks.is_owner)
+    async def log(self, logname: str = 'error', n_lines: int = 10):
         'The bot posts the last n (default 10) lines of the specified logfile'
         try:
             n_lines = int(logname)
@@ -123,22 +90,30 @@ class Control:
             await self.bot.say('Invalid number of lines to display')
             return
 
+        for handler in logging.getLogger().handlers:
+            if isinstance(handler, logging.FileHandler):
+                if handler.get_name() == logname:
+                    path = handler.baseFilename
+                    break
+        else:
+            await self.bot.say('No handler exists by that name.')
+            return
+
         try:
-            path = os.path.join(config.LOG_PATH, '{}.log'.format(logname))
             with open(path, 'rt') as log:
                 lines = deque(log, n_lines)
             pref_str = 'Here are the last {} lines of the {} log:\n'
             pref = pref_str.format(n_lines, logname)
             body = ''.join(lines)
 
-            if len(body) > 0:  # Only continue if there is anything to show
-                responses = paginate(body)
+            if body:  # Only continue if there is something to show
+                paginate = Paginate(body)
 
-                await self.bot.say(pref)
-                for response in responses:
-                    await self.bot.say(response)
+                await self.bot.say(paginate.prefix_next(pref))
+                for page in paginate:
+                    await self.bot.say(page)
             else:
-                await self.bot.say('{} log is empty'.format(logname))
+                await self.bot.say('Log is empty')
         except FileNotFoundError:
             await self.bot.say('Specified log file does not exist')
 
@@ -147,14 +122,14 @@ class Control:
         if self.bot.is_logged_in:
             return '\n  \u2714 Logged in as {}, id: {}'.format(
                 self.bot.user.name, self.bot.user.id)
-        else:
-            return '\n  \u2716 Bot is not currently logged in'
+
+        return '\n  \u2716 Bot is not currently logged in'
 
     @commands.command()
-    @commands.check(checks.is_admin)
+    @commands.check(checks.is_owner)
     async def healthcheck(self, *args: str):
         'Returns the status of the named cog(s)'
-        if len(args) == 0:
+        if not args:
             args = self.bot.cogs
 
         response = ''
@@ -170,11 +145,11 @@ class Control:
             else:
                 response += '{}:\n  \u2716 No such extension\n'.format(name)
 
-        for page in paginate(response):
+        for page in Paginate(response):
             await self.bot.say(page)
 
     @commands.group(pass_context=True)
-    @commands.check(checks.is_admin)
+    @commands.check(checks.is_owner)
     async def ext(self, ctx):
         'Group of commands regarding loading and unloading of extensions'
         if not ctx.invoked_subcommand:
@@ -189,7 +164,7 @@ class Control:
             if ext.startswith('ext.'):
                 extensions.append(ext.split('.')[-1])
 
-        if len(extensions) > 0:
+        if extensions:
             response = 'Currently loaded extensions:\n```\n'
             response += '\n'.join(sorted(extensions))
             response += '```'
@@ -199,7 +174,7 @@ class Control:
         await self.bot.say(response)
 
     @ext.command()
-    async def load(self, name: str=None):
+    async def load(self, name: str = None):
         'Attempt to load the specified extension'
         if name:
             if name.startswith('ext.'):
@@ -216,6 +191,11 @@ class Control:
                                      plain_name)
                     await self.bot.say('Successfully loaded extension: {}'
                                        .format(plain_name))
+                    loaded_extensions = self.bot.config.get(
+                        'loaded_extensions')
+                    loaded_extensions.append(plain_name)
+                    self.bot.config.set('loaded_extensions',
+                                        loaded_extensions)
                 except ImportError as exc:
                     await self.bot.say('Extension not found: {}'
                                        .format(plain_name))
@@ -232,7 +212,7 @@ class Control:
             await self.bot.say('You must specify an extension to load')
 
     @ext.command()
-    async def unload(self, name: str=None):
+    async def unload(self, name: str = None):
         'Attempt to unload the specified extension'
         if name:
             if name.startswith('ext.'):
@@ -248,6 +228,9 @@ class Control:
                                  plain_name)
                 await self.bot.say('Successfully unloaded extension: {}'
                                    .format(plain_name))
+                loaded_extensions = self.bot.config.get('loaded_extensions')
+                loaded_extensions.remove(plain_name)
+                self.bot.config.set('loaded_extensions', loaded_extensions)
             else:
                 await self.bot.say('{} extension is not loaded'
                                    .format(plain_name))
@@ -255,7 +238,7 @@ class Control:
             await self.bot.say('You must specify an extension to unload')
 
     @ext.command(name='reload')
-    async def ext_reload(self, name: str=None):
+    async def ext_reload(self, name: str = None):
         'Attempt to unload then load the specified extension'
         if name:
             if name.startswith('ext.'):
