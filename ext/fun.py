@@ -4,9 +4,10 @@ Meme cog made by Steveizi for antinub-gregbot project.
 Contains several useless but fun commands
 '''
 import logging
-from random import randint
 import json
+import re
 from os.path import isfile
+from random import randint
 
 import discord.ext.commands as commands
 
@@ -61,6 +62,18 @@ class Fun:
         else:
             response += '\n  \u2716 No guessing game currently active'
         return response
+
+    async def on_message(self, message):
+        "Search for r':\\s*\\^\\)' and reply with equivalent plus 1 space"
+        if message.author == self.bot.user:
+            return
+
+        match = re.search(r'(:\s*)(\^\s?\))', message.content)
+        if match:
+            await self.bot.send_message(
+                message.channel,
+                '{0[0]} {0[1]}'.format(match.groups())
+            )
 
     @commands.command()
     async def meme(self, memename: str, imglink: str=""):

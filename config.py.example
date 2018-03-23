@@ -47,17 +47,24 @@ KILLMAILS = {
 }
 
 JABBER = {
-    'channel': 'channel id here',
     'servers': [
         {
             'jabber_id':    'user@jabber.server',
             'password':     'hunter2',
-            'relay_from':   ['important_messages@jabber.server']
+            'relay_from':   ['important_messages@jabber.server'],
+            'forward_to':   ["12345678", "90123456"],
+            'description': 'Anti-Nub Incorporated',
+            'prefix': '@here',
+            'logo_url': 'https://image.eveonline.com/Corporation/98199571_64.png'
         },
         {
             'jabber_id':    'user@jabber2.server',
             'password':     'hunter2',
-            'relay_from':   ['important_messages@jabber2.server']
+            'relay_from':   ['important_messages@jabber2.server'],
+            "forward_to":   ["12345678", "90123456"],
+            'description': 'Goon Legion Horde',
+            'prefix': '@everyone',
+            'logo_url': 'https://image.eveonline.com/Alliance/1220922756_64.png'
         }
     ]
 }
