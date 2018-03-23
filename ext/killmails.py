@@ -15,7 +15,7 @@ from discord import Colour
 from discord.embeds import Embed
 
 from config import KILLMAILS
-from utils.control import notify_admins, paginate
+from utils.messaging import notify_owner, Paginate
 
 
 class Killmails:
@@ -44,8 +44,8 @@ class Killmails:
         'Returns a string describing the status of this cog'
         if not self.zkb_listener.done():
             return '\n  \u2714 Listening'
-        else:
-            return '\n  \u2716 Not listening'
+
+        return '\n  \u2716 Not listening'
 
     def start_listening(self, delay=0):
         'Start the listen loop and add the recovery callback'
@@ -69,6 +69,7 @@ class Killmails:
                                       await self.fetch_crest_info(package))
                 else:
                     self.logger.debug('Got empty package')
+                await sleep(0.1)
         except CancelledError:
             await self.session.close()
             raise CancelledError
@@ -87,9 +88,12 @@ class Killmails:
     async def error_to_admins(self, exc_info):
         'Pass on the error which caused the loop to break to admins'
         message = 'Error in killmail retrieve loop:'
-        traceback = paginate(''.join(format_exception(*exc_info)),
-                             '```Python\n')
-        await notify_admins(self.bot, [message, *traceback])
+        paginate = Paginate(
+            ''.join(format_exception(*exc_info)),
+            enclose=('```Python\n', '```')
+        )
+        notification = [paginate.prefix_next(message)] + list(paginate)
+        await notify_owner(self.bot, notification)
 
     async def wait_for_package(self):
         'Returns a dictionary containing the contents of the redisQ package'
@@ -114,7 +118,7 @@ class Killmails:
                     await self.bot.add_reaction(msg, '\U0001F1EB')
             else:
                 self.logger.debug('Ignoring killmail')
-        except KeyError as exc:
+        except KeyError:
             self.logger.exception("Key Error")
 
     def is_relevant(self, package):
@@ -123,12 +127,14 @@ class Killmails:
         if value >= self.conf['others_value'] and self.conf['others_value']:
             return True
 
-        victim_corp = str(package['victim']['corporation']['id'])
+        killmail = package  # TODO: Remove after converting to ESI.
+
+        victim_corp = str(killmail['victim']['corporation']['id'])
         if victim_corp in self.conf['corp_ids']:
             if value >= self.conf['corp_ids'][victim_corp]:
                 return True
 
-        for attacker in package['attackers']:
+        for attacker in killmail['attackers']:
             if 'corporation' in attacker:
                 attacker_corp = str(attacker['corporation']['id'])
                 if attacker_corp in self.conf['corp_ids']:
@@ -140,7 +146,11 @@ class Killmails:
     async def fetch_crest_info(self, package):
         'Fills in potentially missing information from CREST api'
         zkb = package['zkb']  # The zkb specific part of the package
-        async with self.session.get(zkb['href']) as resp:
+        url = 'https://crest-tq.eveonline.com/killmails/{}/{}/'.format(
+            package['killID'],
+            zkb['hash']
+        )
+        async with self.session.get(url) as resp:
             if resp.status == 200:
                 crest_data = await resp.json()
                 crest_data['zkb'] = zkb
