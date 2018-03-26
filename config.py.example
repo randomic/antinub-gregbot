@@ -38,8 +38,11 @@ KILLMAILS = {
     # Corps you wish to track
     # e.g. '98388312': 100, posts Pandemic Horde Inc. kills/losses
     # as long as they are worth more than 100 million isk
+    'alliance_ids': {
+        '99005492': 0,  # [CENTI]
+    },
     'corp_ids': {
-        '98388312': 100,  # [THXFC]
+        '98199571': 100,  # [A-NI]
     },
     # In millions of isk, all losses above this values will be posted
     # Set to 0 to disable posting of non-corp losses regardless of value
