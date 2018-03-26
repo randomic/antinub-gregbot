@@ -129,12 +129,23 @@ class Killmails:
 
         killmail = package  # TODO: Remove after converting to ESI.
 
+        victim_alliance = str(killmail['victim']['alliance']['id'])
+        if victim_alliance in self.conf['alliance_ids']:
+            if value >= self.conf['alliance_ids'][victim_alliance]:
+                return True
+
         victim_corp = str(killmail['victim']['corporation']['id'])
         if victim_corp in self.conf['corp_ids']:
             if value >= self.conf['corp_ids'][victim_corp]:
                 return True
 
         for attacker in killmail['attackers']:
+            if 'alliance' in attacker:
+                attacker_alliance = str(attacker['alliance']['id'])
+                if attacker_alliance in self.conf['alliance_ids']:
+                    if value >= self.conf['alliance_ids']:
+                        return True
+
             if 'corporation' in attacker:
                 attacker_corp = str(attacker['corporation']['id'])
                 if attacker_corp in self.conf['corp_ids']:
