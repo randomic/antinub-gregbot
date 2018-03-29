@@ -134,7 +134,6 @@ class Control:
 
         response = ''
         for name in args:
-            name = name.capitalize()
             if name in self.bot.cogs:
                 cog = self.bot.cogs[name]
                 try:
