@@ -8,7 +8,7 @@ from utils.messaging import Paginate, notify_owner
 from .jabberrelay import JabberRelay
 
 
-class Aggregator:
+class PingAggregator:
     '''A cog which connects to config defined xmpp servers and relays messages
     from certain senders to the config defined channel'''
     def __init__(self, bot, config):
