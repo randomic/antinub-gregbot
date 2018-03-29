@@ -21,6 +21,7 @@ from utils.messaging import notify_owner, Paginate
 class Killmails:
     '''A cog which monitors zKillboard's redisQ api and posts links to
     killmails which match the provided rule'''
+
     def __init__(self, bot, config):
         self.logger = logging.getLogger(__name__)
         self.bot = bot
@@ -129,8 +130,9 @@ class Killmails:
 
         killmail = package  # TODO: Remove after converting to ESI.
 
-        victim_alliance = str(killmail['victim']['alliance']['id'])
-        if victim_alliance in self.conf['alliance_ids']:
+        victim_alliance = str(killmail['victim'].get(
+            'alliance', {}).get('id', None))
+        if victim_alliance and victim_alliance in self.conf['alliance_ids']:
             if value >= self.conf['alliance_ids'][victim_alliance]:
                 return True
 
@@ -141,8 +143,9 @@ class Killmails:
 
         for attacker in killmail['attackers']:
             if 'alliance' in attacker:
-                attacker_alliance = str(attacker['alliance']['id'])
-                if attacker_alliance in self.conf['alliance_ids']:
+                attacker_alliance = str(
+                    attacker.get('alliance', {}).get('id', None))
+                if attacker_alliance and attacker_alliance in self.conf['alliance_ids']:
                     if value >= self.conf['alliance_ids'][attacker_alliance]:
                         return True
 
