@@ -1,6 +1,15 @@
+from urllib.request import urlopen
+
 from colorthief import ColorThief as ColourThief
 from colorthief import MMCQ
 from discord import Colour
+
+
+def get_embed_colour(url):
+    colour_thief = SaturatedColourThief(
+        urlopen(url)
+    )
+    return colour_thief.get_color(1)
 
 
 class SaturatedColourThief(ColourThief):

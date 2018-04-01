@@ -6,12 +6,10 @@ config.JABBER_SERVERS
 It will then listen on those servers and relay any messages received if
 they are sent by a jid in the config.JABBER_SERVERS['relay_from'] list
 '''
-from urllib.request import urlopen
-
 import aioxmpp
 from aioxmpp.structs import LanguageRange
 
-from utils.colourthief import SaturatedColourThief
+from utils.colourthief import get_embed_colour
 
 
 class JabberRelay(aioxmpp.PresenceManagedClient):
@@ -39,7 +37,7 @@ class JabberRelay(aioxmpp.PresenceManagedClient):
         self.bot = bot
         self.relay_from = jabber_server['relay_from']
         self.jabber_server = jabber_server
-        self.embed_colour = self.get_embed_colour()
+        self.embed_colour = get_embed_colour(jabber_server['logo_url'])
         self.languages = [LanguageRange(tag='en'), LanguageRange.WILDCARD]
         self.summon(aioxmpp.DiscoServer)
         self.summon(aioxmpp.RosterClient)
@@ -58,11 +56,6 @@ class JabberRelay(aioxmpp.PresenceManagedClient):
     def disconnect(self):
         self.presence = aioxmpp.PresenceState(False)
 
-    def get_embed_colour(self):
-        colour_thief = SaturatedColourThief(
-            urlopen(self.jabber_server['logo_url'])
-        )
-        return colour_thief.get_color(1)
 
     def message_receieved(self, message):
         'Pass messages from specified senders to the cog for relaying'
