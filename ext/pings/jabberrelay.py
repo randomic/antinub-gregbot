@@ -56,7 +56,7 @@ class JabberRelay(aioxmpp.PresenceManagedClient):
     def disconnect(self):
         self.presence = aioxmpp.PresenceState(False)
 
-    def is_healthy(self):
+    def get_health(self):
         if self.established:
             resp = '\n  \u2714 {} - Connected'
         else:
