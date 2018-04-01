@@ -56,6 +56,12 @@ class JabberRelay(aioxmpp.PresenceManagedClient):
     def disconnect(self):
         self.presence = aioxmpp.PresenceState(False)
 
+    def is_healthy(self):
+        if self.established:
+            resp = '\n  \u2714 {} - Connected'
+        else:
+            resp = '\n  \u2716 {} - Disconnected'
+        return resp.format(self.local_jid.domain)
 
     def message_receieved(self, message):
         'Pass messages from specified senders to the cog for relaying'
