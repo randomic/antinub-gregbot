@@ -5,6 +5,7 @@ from discord.embeds import Embed
 
 from utils.messaging import Paginate, notify_owner
 
+from .discordrelay import DiscordRelay
 from .jabberrelay import JabberRelay
 
 
@@ -17,12 +18,14 @@ class PingAggregator:
         self.relays = []
         self.last_msg = None
 
-        self.create_clients(config['servers'])
+        self.create_clients(config)
 
-    def create_clients(self, xmpp_servers):
+    def create_clients(self, config):
         'Creates an JabberRelay client for each server specified'
-        for server in xmpp_servers:
-            self.relays.append(JabberRelay(self.bot, server, self.logger))
+        for jabber_config in config.get("jabber_relays", []):
+            self.relays.append(JabberRelay(self.bot, jabber_config, self.logger))
+        for discord_config in config.get("discord_relays", []):
+            self.relays.append(DiscordRelay(self.bot, discord_config))
 
     def get_health(self):
         'Returns a string describing the status of this cog'
@@ -90,7 +93,7 @@ class PingAggregator:
             embed.set_footer(
                 text='Message {}/{}'.format(currentmsg, totalmsgs)
             )
-        embed.timestamp = datetime.now()
+        embed.timestamp = datetime.utcnow()
         embed.colour = package['embed_colour']
 
         return embed
