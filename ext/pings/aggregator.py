@@ -28,12 +28,8 @@ class PingAggregator:
         'Returns a string describing the status of this cog'
         if self.relays:
             response = ''
-            for xmpp_relay in self.relays:
-                if xmpp_relay.established:
-                    resp = '\n  \u2714 {} - Connected'
-                else:
-                    resp = '\n  \u2716 {} - Disconnected'
-                response += resp.format(xmpp_relay.local_jid.domain)
+            for relay in self.relays:
+                response += relay.get_health()
         else:
             response = '\n  \u2716 No relays initialised'
         return response
