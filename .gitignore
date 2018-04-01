@@ -1,4 +1,5 @@
 # Project specific ignores
+config.py
 _test*
 *db*
 
