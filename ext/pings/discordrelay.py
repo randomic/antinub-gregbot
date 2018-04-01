@@ -26,7 +26,7 @@ class DiscordRelay:
         return resp.format(fmt)
 
     async def on_ready(self):
-        await self.client.change_presence(status=Status.idle)
+        await self.client.change_presence(status=Status.invisible)
 
     async def on_message(self, message):
         if message.mention_everyone:
