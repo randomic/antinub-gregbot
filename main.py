@@ -42,13 +42,21 @@ def start_bot():
         owner_id = input('Enter owner ID: ')
         config.set('owner_id', owner_id)
 
-    bot = commands.Bot(commands.when_mentioned_or(*cmd_prefixes),
-                       pm_help=True)
+    bot = commands.Bot(when_mentioned_or(*cmd_prefixes), pm_help=True)
     bot.loop.create_task(when_ready(bot, save_token))
     bot.tdb = tdb
     bot.config = config
 
     bot.run(token)
+
+
+def when_mentioned_or(*prefixes):
+    def inner(bot, msg):
+        r = list(prefixes)
+        r.append("{0.user.mention} ".format(bot))
+        return r
+
+    return inner
 
 
 async def when_ready(bot, save_token=None):
