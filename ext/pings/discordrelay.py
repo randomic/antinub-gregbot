@@ -32,9 +32,9 @@ class DiscordRelay:
         if message.mention_everyone:
             package = {
                 'body': message.clean_content,
-                'sender': message.channel.name or "Private Channel",
+                'sender': message.server.name,
                 'destinations': self.config['destinations'],
-                'description': message.server.name,
+                'description': message.channel.name or "Private Channel",
                 'logo_url': self.config['logo_url'],
                 'embed_colour': self.config["embed_colour"]
             }
