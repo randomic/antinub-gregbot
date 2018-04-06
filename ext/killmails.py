@@ -132,7 +132,7 @@ class Killmails:
 
         if 'alliance' in killmail['victim']:
             victim_alliance = str(killmail['victim']['alliance']['id'])
-            if victim_alliance and victim_alliance in self.conf['alliance_ids']:
+            if victim_alliance in self.conf['alliance_ids']:
                 if value >= self.conf['alliance_ids'][victim_alliance]:
                     return True
 
