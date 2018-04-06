@@ -198,13 +198,12 @@ class Killmails:
         embed.url = 'https://zkillboard.com/kill/{}/'.format(package['killID'])
         embed.timestamp = datetime.strptime(package['killTime'],
                                             '%Y.%m.%d %H:%M:%S')
+        embed.colour = self.colours['green']
         if 'alliance' in victim:
             if victim['alliance']['id_str'] in self.conf['alliance_ids']:
                 embed.colour = self.colours['red']
         elif victim['corporation']['id_str'] in self.conf['corp_ids']:
             embed.colour = self.colours['red']
-        else:
-            embed.colour = self.colours['green']
         embed.set_thumbnail(url=('http://imageserver.eveonline.com/Type/'
                                  '{}_64.png').format(ship['id_str']))
         return embed
