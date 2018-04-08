@@ -144,14 +144,15 @@ class Killmails:
         for attacker in killmail['attackers']:
             if 'alliance' in attacker:
                 attacker_alliance = str(attacker['alliance']['id'])
-                if attacker_alliance and attacker_alliance in self.conf['alliance_ids']:
+                if attacker_alliance in self.conf['alliance_ids']:
                     if value >= self.conf['alliance_ids'][attacker_alliance]:
                         return True
 
-            attacker_corp = str(attacker['corporation']['id'])
-            if attacker_corp in self.conf['corp_ids']:
-                if value >= self.conf['corp_ids'][attacker_corp]:
-                    return True
+            if 'corporation' in attacker:
+                attacker_corp = str(attacker['corporation']['id'])
+                if attacker_corp in self.conf['corp_ids']:
+                    if value >= self.conf['corp_ids'][attacker_corp]:
+                        return True
 
         return False
 
