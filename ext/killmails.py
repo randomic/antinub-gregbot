@@ -130,11 +130,11 @@ class Killmails:
 
         killmail = package  # TODO: Remove after converting to ESI.
 
-        victim_alliance = str(killmail['victim'].get(
-            'alliance', {}).get('id', None))
-        if victim_alliance and victim_alliance in self.conf['alliance_ids']:
-            if value >= self.conf['alliance_ids'][victim_alliance]:
-                return True
+        if 'alliance' in killmail['victim']:
+            victim_alliance = str(killmail['victim']['alliance']['id'])
+            if victim_alliance in self.conf['alliance_ids']:
+                if value >= self.conf['alliance_ids'][victim_alliance]:
+                    return True
 
         victim_corp = str(killmail['victim']['corporation']['id'])
         if victim_corp in self.conf['corp_ids']:
@@ -143,9 +143,8 @@ class Killmails:
 
         for attacker in killmail['attackers']:
             if 'alliance' in attacker:
-                attacker_alliance = str(
-                    attacker.get('alliance', {}).get('id', None))
-                if attacker_alliance and attacker_alliance in self.conf['alliance_ids']:
+                attacker_alliance = str(attacker['alliance']['id'])
+                if attacker_alliance in self.conf['alliance_ids']:
                     if value >= self.conf['alliance_ids'][attacker_alliance]:
                         return True
 
@@ -200,12 +199,12 @@ class Killmails:
         embed.url = 'https://zkillboard.com/kill/{}/'.format(package['killID'])
         embed.timestamp = datetime.strptime(package['killTime'],
                                             '%Y.%m.%d %H:%M:%S')
-        if victim['alliance']['id_str'] in self.conf['alliance_ids']:
-            embed.colour = self.colours['red']
+        embed.colour = self.colours['green']
+        if 'alliance' in victim:
+            if victim['alliance']['id_str'] in self.conf['alliance_ids']:
+                embed.colour = self.colours['red']
         elif victim['corporation']['id_str'] in self.conf['corp_ids']:
             embed.colour = self.colours['red']
-        else:
-            embed.colour = self.colours['green']
         embed.set_thumbnail(url=('http://imageserver.eveonline.com/Type/'
                                  '{}_64.png').format(ship['id_str']))
         return embed
