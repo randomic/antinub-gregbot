@@ -42,13 +42,21 @@ def start_bot():
         owner_id = input('Enter owner ID: ')
         config.set('owner_id', owner_id)
 
-    bot = commands.Bot(commands.when_mentioned_or(*cmd_prefixes),
-                       pm_help=True)
+    bot = commands.Bot(when_mentioned_or(*cmd_prefixes), pm_help=True)
     bot.loop.create_task(when_ready(bot, save_token))
     bot.tdb = tdb
     bot.config = config
 
     bot.run(token)
+
+
+def when_mentioned_or(*prefixes):
+    def inner(bot, msg):
+        r = list(prefixes)
+        r.append("{0.user.mention} ".format(bot))
+        return r
+
+    return inner
 
 
 async def when_ready(bot, save_token=None):
@@ -72,22 +80,21 @@ def load_extensions(bot):
     bot.load_extension('core')
     logger.info('Successfully loaded core extensions')
 
-    loaded_extensions = bot.config.get('loaded_extensions')
-    if not loaded_extensions:
-        loaded_extensions = []
-        bot.config.set('loaded_extensions', loaded_extensions)
+    loaded_extensions = bot.config.get('loaded_extensions') or []
 
-    for ext in loaded_extensions:
+    for ext in loaded_extensions.copy():
         ext_mod = 'ext.{}'.format(ext)
         if ext_mod not in bot.extensions:
             try:
                 bot.load_extension(ext_mod)
                 logger.info('Successfully loaded extension: %s', ext)
             except ImportError as error:
+                loaded_extensions.remove(ext)
                 logger.warning(
                     'Failed to load extension: %s - %s', ext, error)
         else:
             logger.warning('Extension with same name already loaded: %s', ext)
+    bot.config.set('loaded_extensions', loaded_extensions)
 
 
 if __name__ == '__main__':
