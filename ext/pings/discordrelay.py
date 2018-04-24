@@ -32,7 +32,7 @@ class DiscordRelay:
         if message.mention_everyone:
             package = {
                 'body': message.clean_content,
-                'sender': message.author.name,
+                'sender': message.author.display_name,
                 'destinations': self.config['destinations'],
                 'description': '{}: {}'.format(
                     message.server.name,
