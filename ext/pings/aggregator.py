@@ -38,6 +38,8 @@ class PingAggregator:
 
     async def on_broadcast(self, package):
         'Relay message to discord, ignore if it is a duplicate'
+        body = package['body']
+
         self.logger.info(
             'Relaying message from %s', package['sender']
         )
