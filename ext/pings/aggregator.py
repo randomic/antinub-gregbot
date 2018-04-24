@@ -16,7 +16,6 @@ class PingAggregator:
         self.logger = logging.getLogger(__name__)
         self.bot = bot
         self.relays = []
-        self.last_msg = None
 
         self.create_clients(config)
 
@@ -39,42 +38,32 @@ class PingAggregator:
 
     async def on_broadcast(self, package):
         'Relay message to discord, ignore if it is a duplicate'
-        body = package['body'].replace(' || ', '\n')
+        self.logger.info(
+            'Relaying message from %s', package['sender']
+        )
 
-        idx = body.rfind('Broadcast sent at ')
-        raw_msg = body[:idx] if idx > 0 else body
+        embeds = []
+        paginate = Paginate(body, enclose=('', ''), page_size=1900)
+        for page in paginate:
+            embed = self.ping_embed(package, page, paginate)
+            embeds.append(embed)
 
-        if raw_msg != self.last_msg:
-            self.last_msg = raw_msg
-            self.logger.info(
-                'Relaying message from %s', package['sender']
-            )
+        for destination in package['destinations']:
+            channel_id = destination['channel_id']
+            channel = self.bot.get_channel(channel_id)
 
-            embeds = []
-            paginate = Paginate(body, enclose=('', ''), page_size=1900)
-            for page in paginate:
-                embed = self.ping_embed(package, page, paginate)
-                embeds.append(embed)
-
-            for destination in package['destinations']:
-                channel_id = destination['channel_id']
-                channel = self.bot.get_channel(channel_id)
-
-                if channel:
-                    embed = embeds[0]
-                    await self.bot.send_message(
-                        channel, embed=embed, content=destination.get('prefix')
-                    )  # Only show prefix on first page.
-                    for embed in embeds[1:]:
-                        await self.bot.send_message(channel, embed=embed)
-                else:
-                    await notify_owner(
-                        self.bot,
-                        ['Invalid channel: {}'.format(channel_id)]
-                    )
-        else:
-            self.logger.info('Ignored duplicate message from %s',
-                             package['sender'])
+            if channel:
+                embed = embeds[0]
+                await self.bot.send_message(
+                    channel, embed=embed, content=destination.get('prefix')
+                )  # Only show prefix on first page.
+                for embed in embeds[1:]:
+                    await self.bot.send_message(channel, embed=embed)
+            else:
+                await notify_owner(
+                    self.bot,
+                    ['Invalid channel: {}'.format(channel_id)]
+                )
 
     @staticmethod
     def ping_embed(package, message, paginate):
