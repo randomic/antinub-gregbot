@@ -22,6 +22,7 @@ def setup(bot):
 class Control:
     '''A cog defining commands for controlling the
     bot's operation such as stopping the bot'''
+
     def __init__(self, bot):
         self.logger = logging.getLogger(__name__)
         self.bot = bot
@@ -32,9 +33,8 @@ class Control:
 
     async def error_notification(self, message, exc_info):
         'Send an error notification to the bot owner'
-        paginate = Paginate(
-            ''.join(format_exception(*exc_info)), ('```Python\n', '```')
-        )
+        paginate = Paginate(''.join(format_exception(*exc_info)),
+                            ('```Python\n', '```'))
         notification = [paginate.prefix_next(message)] + list(paginate)
 
         if notification != self.last_error:
@@ -54,8 +54,8 @@ class Control:
 
         if isinstance(exception, commands.CheckFailure):
             logger.warning('{} {} attempted to use {} command'.format(
-                ctx.message.author.name,
-                ctx.message.author.mention, ctx.command))
+                ctx.message.author.name, ctx.message.author.mention,
+                ctx.command))
         elif isinstance(exception, commands.CommandNotFound):
             logger.debug(exception)
         else:
@@ -190,11 +190,9 @@ class Control:
                                      plain_name)
                     await self.bot.say('Successfully loaded extension: {}'
                                        .format(plain_name))
-                    loaded_extensions = self.bot.config.get(
-                        'loaded_extensions')
+                    loaded_extensions = self.bot.config['loaded_extensions']
                     loaded_extensions.append(plain_name)
-                    self.bot.config.set('loaded_extensions',
-                                        loaded_extensions)
+                    self.bot.config['loaded_extensions'] = loaded_extensions
                 except ImportError as exc:
                     await self.bot.say('Extension not found: {}'
                                        .format(plain_name))
@@ -227,9 +225,9 @@ class Control:
                                  plain_name)
                 await self.bot.say('Successfully unloaded extension: {}'
                                    .format(plain_name))
-                loaded_extensions = self.bot.config.get('loaded_extensions')
+                loaded_extensions = self.bot.config['loaded_extensions']
                 loaded_extensions.remove(plain_name)
-                self.bot.config.set('loaded_extensions', loaded_extensions)
+                self.bot.config['loaded_extensions'] = loaded_extensions
             else:
                 await self.bot.say('{} extension is not loaded'
                                    .format(plain_name))
