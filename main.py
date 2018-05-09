@@ -9,7 +9,7 @@ import discord.ext.commands as commands
 from tinydb import TinyDB
 
 from utils.log import configure_logging
-from utils.config import Config
+from utils.table import KeyValueTable
 
 
 def start_bot():
@@ -17,30 +17,30 @@ def start_bot():
 
     """
     tdb = TinyDB('db.json')
-    config = Config(tdb)
+    config = KeyValueTable(tdb, 'config')
 
-    debug = config.get('debug')
+    debug = config['debug']
     if not debug:
         debug = False
-        config.set('debug', debug)
+        config['debug'] = debug
     logging.getLogger().setLevel(logging.DEBUG if debug else logging.INFO)
 
-    cmd_prefixes = config.get('cmd_prefixes')
+    cmd_prefixes = config['cmd_prefixes']
     if not cmd_prefixes:
         cmd_prefixes = []
-        config.set('cmd_prefixes', cmd_prefixes)
+        config['cmd_prefixes'] = cmd_prefixes
 
-    token = config.get('token')
+    token = config['token']
     if not token:
         token = input('Enter token: ')
         save_token = (config, token)
     else:
         save_token = None
 
-    owner_id = config.get('owner_id')
+    owner_id = config['owner_id']
     if not owner_id:
         owner_id = input('Enter owner ID: ')
-        config.set('owner_id', owner_id)
+        config['owner_id'] = owner_id
 
     bot = commands.Bot(when_mentioned_or(*cmd_prefixes), pm_help=True)
     bot.loop.create_task(when_ready(bot, save_token))
@@ -69,7 +69,7 @@ async def when_ready(bot, save_token=None):
     if save_token:
         # If a token was given during startup, save it now we know it's valid.
         config, token = save_token
-        config.set('token', token)
+        config['token'] = token
     load_extensions(bot)
 
 
@@ -80,7 +80,7 @@ def load_extensions(bot):
     bot.load_extension('core')
     logger.info('Successfully loaded core extensions')
 
-    loaded_extensions = bot.config.get('loaded_extensions') or []
+    loaded_extensions = bot.config['loaded_extensions'] or []
 
     for ext in loaded_extensions.copy():
         ext_mod = 'ext.{}'.format(ext)
@@ -94,7 +94,7 @@ def load_extensions(bot):
                     'Failed to load extension: %s - %s', ext, error)
         else:
             logger.warning('Extension with same name already loaded: %s', ext)
-    bot.config.set('loaded_extensions', loaded_extensions)
+    bot.config['loaded_extensions'] = loaded_extensions
 
 
 if __name__ == '__main__':

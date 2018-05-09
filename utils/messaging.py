@@ -68,7 +68,7 @@ class Paginate:
 
 async def notify_owner(bot, messages):
     'Send message to the private channel of the owner'
-    channel = await bot.get_user_info(bot.config.get('owner_id'))
+    channel = await bot.get_user_info(bot.config['owner_id'])
     for message in messages:
         await bot.send_message(channel, message)
 
