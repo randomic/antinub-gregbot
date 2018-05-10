@@ -13,7 +13,7 @@ class KeyValueTable:
         self.table = tdb.table(name)
         self.setting = Query()
 
-    def __getitem__(self, key):
+    def get(self, key):
         """Get the value of named setting or None if it doesn't exist.
 
         """
@@ -22,7 +22,7 @@ class KeyValueTable:
             return result['value']
         return None
 
-    def __setitem__(self, key, value):
+    def set(self, key, value):
         """Insert or update named setting with given value.
 
         """
@@ -30,3 +30,9 @@ class KeyValueTable:
             self.table.update({'value': value}, self.setting.key == key)
         else:
             self.table.insert({'key': key, 'value': value})
+
+    def __getitem__(self, key):
+        return self.get(key)
+
+    def __setitem__(self, key, value):
+        return self.set(key, value)
