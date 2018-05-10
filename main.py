@@ -88,7 +88,7 @@ def load_extensions(bot):
             try:
                 bot.load_extension(ext_mod)
                 logger.info('Successfully loaded extension: %s', ext)
-            except ImportError as error:
+            except Exception as error:
                 loaded_extensions.remove(ext)
                 logger.warning(
                     'Failed to load extension: %s - %s', ext, error)
