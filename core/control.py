@@ -53,16 +53,16 @@ class Control:
         logger = self.logger if not ctx.cog else ctx.cog.logger
 
         if isinstance(exception, commands.CheckFailure):
-            logger.warning('{} {} attempted to use {} command'.format(
+            logger.warning('{} {} attempted to use `{}` command'.format(
                 ctx.message.author.name, ctx.message.author.mention,
                 ctx.command))
         elif isinstance(exception, commands.CommandNotFound):
-            logger.debug(exception)
+            logger.info(exception)
         else:
-            message = "Exception in '{}' command:".format(ctx.command)
+            message = "Exception in `{}` command:".format(ctx.command)
             exc_info = (type(exception), exception, exception.__traceback__)
             logger.error(message, exc_info=exc_info)
-            self.error_notification(message, exc_info)
+            await self.error_notification(message, exc_info)
 
     @commands.command()
     @commands.check(checks.is_owner)
@@ -199,9 +199,8 @@ class Control:
                 except Exception as exc:
                     await self.bot.say('Failed to load extension: {} - {}'
                                        .format(plain_name, exc))
-                    self.logger.warning('Failed to load extension: %s',
-                                        plain_name)
-                    raise exc
+                    self.logger.warning('Failed to load extension: %s - %s',
+                                        plain_name, exc)
             else:
                 await self.bot.say('{} extension is already loaded'
                                    .format(plain_name))
@@ -260,7 +259,6 @@ class Control:
                                         plain_name, exc)
                     await self.bot.say('Failed to reload extension: {}'
                                        .format(plain_name))
-                    raise exc
             else:
                 await self.bot.say('{} extension is not loaded'
                                    .format(plain_name))
