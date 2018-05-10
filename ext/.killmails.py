@@ -18,6 +18,11 @@ from config import KILLMAILS
 from utils.messaging import notify_owner, Paginate
 
 
+def setup(bot):
+    'Adds the cog to the provided discord bot'
+    bot.add_cog(Killmails(bot, KILLMAILS))
+
+
 class Killmails:
     '''A cog which monitors zKillboard's redisQ api and posts links to
     killmails which match the provided rule'''
@@ -26,10 +31,7 @@ class Killmails:
         self.logger = logging.getLogger(__name__)
         self.bot = bot
         self.conf = config
-        self.colours = {
-            'green': Colour(0x007a00),
-            'red': Colour(0x7a0000)
-        }
+        self.colours = {'green': Colour(0x007a00), 'red': Colour(0x7a0000)}
 
         self.zkb_listener = None
         connector = TCPConnector(family=AF_INET if config['force_ipv4'] else 0)
@@ -66,8 +68,8 @@ class Killmails:
                     continue
 
                 if package:
-                    self.bot.dispatch('killmail',
-                                      await self.fetch_crest_info(package))
+                    self.bot.dispatch('killmail', await
+                                      self.fetch_crest_info(package))
                 else:
                     self.logger.debug('Got empty package')
                 await sleep(0.1)
@@ -81,8 +83,8 @@ class Killmails:
         if not fut.cancelled():
             exc = fut.exception()
             exc_info = (type(exc), exc, exc.__traceback__)
-            self.logger.error('An error occurred, restarting the loop',
-                              exc_info=exc_info)
+            self.logger.error(
+                'An error occurred, restarting the loop', exc_info=exc_info)
             self.bot.loop.create_task(self.error_to_admins(exc_info))
             self.start_listening(10)
 
@@ -91,8 +93,7 @@ class Killmails:
         message = 'Error in killmail retrieve loop:'
         paginate = Paginate(
             ''.join(format_exception(*exc_info)),
-            enclose=('```Python\n', '```')
-        )
+            enclose=('```Python\n', '```'))
         notification = [paginate.prefix_next(message)] + list(paginate)
         await notify_owner(self.bot, notification)
 
@@ -160,9 +161,7 @@ class Killmails:
         'Fills in potentially missing information from CREST api'
         zkb = package['zkb']  # The zkb specific part of the package
         url = 'https://crest-tq.eveonline.com/killmails/{}/{}/'.format(
-            package['killID'],
-            zkb['hash']
-        )
+            package['killID'], zkb['hash'])
         async with self.session.get(url) as resp:
             if resp.status == 200:
                 crest_data = await resp.json()
@@ -177,25 +176,21 @@ class Killmails:
         'Generates the embed which the killmail will be posted in'
         victim = package['victim']
         if 'character' in victim:
-            victim_str = '{} ({})'.format(
-                victim['character']['name'],
-                victim['corporation']['name'])
+            victim_str = '{} ({})'.format(victim['character']['name'],
+                                          victim['corporation']['name'])
         else:
             victim_str = victim['corporation']['name']
         ship = victim['shipType']
 
         embed = Embed()
-        embed.title = '{} | {} | {}'.format(
-            package['solarSystem']['name'],
-            ship['name'],
-            victim['corporation']['name'])
+        embed.title = '{} | {} | {}'.format(package['solarSystem']['name'],
+                                            ship['name'],
+                                            victim['corporation']['name'])
         embed.description = ('{} lost their {} in {}\n'
                              'Total Value: {:,} ISK\n'
-                             '\u200b').format(
-                                 victim_str,
-                                 ship['name'],
-                                 package['solarSystem']['name'],
-                                 package['zkb']['totalValue'])
+                             '\u200b').format(victim_str, ship['name'],
+                                              package['solarSystem']['name'],
+                                              package['zkb']['totalValue'])
         embed.url = 'https://zkillboard.com/kill/{}/'.format(package['killID'])
         embed.timestamp = datetime.strptime(package['killTime'],
                                             '%Y.%m.%d %H:%M:%S')
@@ -205,11 +200,7 @@ class Killmails:
                 embed.colour = self.colours['red']
         elif victim['corporation']['id_str'] in self.conf['corp_ids']:
             embed.colour = self.colours['red']
-        embed.set_thumbnail(url=('http://imageserver.eveonline.com/Type/'
-                                 '{}_64.png').format(ship['id_str']))
+        embed.set_thumbnail(
+            url=('http://imageserver.eveonline.com/Type/'
+                 '{}_64.png').format(ship['id_str']))
         return embed
-
-
-def setup(bot):
-    'Adds the cog to the provided discord bot'
-    bot.add_cog(Killmails(bot, KILLMAILS))
