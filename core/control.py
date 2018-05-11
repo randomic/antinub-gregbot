@@ -6,7 +6,7 @@ Contains several commands useful for controlling/debugging the bot
 import logging
 import sys
 from collections import deque
-from traceback import format_exception
+from traceback import _format_final_exc_line, format_exception
 
 import discord.ext.commands as commands
 
@@ -188,7 +188,7 @@ class Control:
                     self.bot.load_extension(lib_name)
                     self.logger.info('Successfully loaded extension: %s',
                                      plain_name)
-                    await self.bot.say('Successfully loaded extension: {}'
+                    await self.bot.say('Successfully loaded extension: `{}`'
                                        .format(plain_name))
                     loaded_extensions = self.bot.config['loaded_extensions']
                     loaded_extensions.append(plain_name)
@@ -197,12 +197,17 @@ class Control:
                     await self.bot.say('Extension not found: {}'
                                        .format(plain_name))
                 except Exception as exc:
-                    await self.bot.say('Failed to load extension: {} - {}'
-                                       .format(plain_name, exc))
+                    error_str = _format_final_exc_line(
+                        type(exc).__qualname__, exc).strip()
                     self.logger.warning('Failed to load extension: %s - %s',
-                                        plain_name, exc)
+                                        plain_name, error_str)
+                    await self.bot.say(
+                        'Failed to load extension: `{}` - `{}`'.format(
+                            plain_name, error_str))
+                    if lib_name in sys.modules:
+                        del sys.modules[lib_name]
             else:
-                await self.bot.say('{} extension is already loaded'
+                await self.bot.say('`{}` extension is already loaded'
                                    .format(plain_name))
         else:
             await self.bot.say('You must specify an extension to load')
