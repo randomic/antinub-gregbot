@@ -1,3 +1,11 @@
+from discord.ext import commands
+
+
+def setup(bot: commands.Bot):
+    bot.add_cog(KillmailPoster(bot))
+
+
 class KillmailPoster:
     def __init__(self, bot):
-        raise NotImplementedError
+        return
+        raise NotImplementedError("A v9")
