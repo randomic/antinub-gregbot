@@ -2,16 +2,23 @@ import logging
 from datetime import datetime
 
 from discord.embeds import Embed
+from discord.ext import commands
 
+from config import JABBER
 from utils.messaging import Paginate, notify_owner
 
 from .discordrelay import DiscordRelay
 from .jabberrelay import JabberRelay
 
 
+def setup(bot: commands.Bot):
+    bot.add_cog(PingAggregator(bot, JABBER))
+
+
 class PingAggregator:
     '''A cog which connects to config defined xmpp servers and relays messages
     from certain senders to the config defined channel'''
+
     def __init__(self, bot, config):
         self.logger = logging.getLogger(__name__)
         self.bot = bot
@@ -22,7 +29,8 @@ class PingAggregator:
     def create_clients(self, config):
         'Creates an JabberRelay client for each server specified'
         for jabber_config in config.get("jabber_relays", []):
-            self.relays.append(JabberRelay(self.bot, jabber_config, self.logger))
+            self.relays.append(
+                JabberRelay(self.bot, jabber_config, self.logger))
         for discord_config in config.get("discord_relays", []):
             self.relays.append(DiscordRelay(self.bot, discord_config))
 
@@ -40,9 +48,7 @@ class PingAggregator:
         'Relay message to discord, ignore if it is a duplicate'
         body = package['body']
 
-        self.logger.info(
-            'Relaying message from %s', package['sender']
-        )
+        self.logger.info('Relaying message from %s', package['sender'])
 
         embeds = []
         paginate = Paginate(body, enclose=('', ''), page_size=1900)
@@ -62,10 +68,8 @@ class PingAggregator:
                 for embed in embeds[1:]:
                     await self.bot.send_message(channel, embed=embed)
             else:
-                await notify_owner(
-                    self.bot,
-                    ['Invalid channel: {}'.format(channel_id)]
-                )
+                await notify_owner(self.bot,
+                                   ['Invalid channel: {}'.format(channel_id)])
 
     @staticmethod
     def ping_embed(package, message, paginate):
@@ -82,8 +86,7 @@ class PingAggregator:
         embed.set_thumbnail(url=package['logo_url'])
         if totalmsgs > 1:
             embed.set_footer(
-                text='Message {}/{}'.format(currentmsg, totalmsgs)
-            )
+                text='Message {}/{}'.format(currentmsg, totalmsgs))
         embed.timestamp = datetime.utcnow()
         embed.colour = package['embed_colour']
 
