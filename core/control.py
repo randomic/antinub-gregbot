@@ -158,10 +158,7 @@ class Control:
     @ext.command(name='list')
     async def ext_list(self):
         'List the currently loaded extensions'
-        extensions = []
-        for ext in self.bot.extensions.keys():
-            if ext.startswith('ext.'):
-                extensions.append(ext.split('.')[-1])
+        extensions = self.bot.config['loaded_extensions']
 
         if extensions:
             response = 'Currently loaded extensions:\n```\n'
