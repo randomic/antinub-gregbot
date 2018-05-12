@@ -170,18 +170,16 @@ class Control:
         await self.bot.say(response)
 
     @ext.command()
-    async def load(self, name: str = None):
+    async def load(self, name: str = ''):
         'Attempt to load the specified extension'
         if not name:
             await self.bot.say('You must specify an extension to load')
             return
 
-        if name.startswith('ext.'):
-            plain_name = name[4:]
-            lib_name = name
-        else:
-            plain_name = name
-            lib_name = 'ext.{}'.format(name)
+        plain_name = name.strip('.')
+        if plain_name.startswith('ext'):
+            plain_name = plain_name[3:]
+        lib_name = 'ext.{}'.format(name)
 
         if lib_name in self.bot.extensions:
             await self.bot.say('`{}` extension is already loaded'
@@ -213,15 +211,13 @@ class Control:
                 del sys.modules[lib_name]
 
     @ext.command()
-    async def unload(self, name: str = None):
+    async def unload(self, name: str = ''):
         'Attempt to unload the specified extension'
         if name:
-            if name.startswith('ext.'):
-                plain_name = name[4:]
-                lib_name = name
-            else:
-                plain_name = name
-                lib_name = 'ext.{}'.format(name)
+            plain_name = name.strip('.')
+            if plain_name.startswith('ext'):
+                plain_name = plain_name[3:]
+            lib_name = 'ext.{}'.format(name)
 
             if lib_name in self.bot.extensions:
                 self.bot.unload_extension(lib_name)
@@ -239,15 +235,13 @@ class Control:
             await self.bot.say('You must specify an extension to unload')
 
     @ext.command(name='reload')
-    async def ext_reload(self, name: str = None):
+    async def ext_reload(self, name: str = ''):
         'Attempt to unload then load the specified extension'
         if name:
-            if name.startswith('ext.'):
-                plain_name = name[4:]
-                lib_name = name
-            else:
-                plain_name = name
-                lib_name = 'ext.{}'.format(name)
+            plain_name = name.strip('.')
+            if plain_name.startswith('ext'):
+                plain_name = plain_name[3:]
+            lib_name = 'ext.{}'.format(name)
 
             if lib_name in self.bot.extensions:
                 self.bot.unload_extension(lib_name)
