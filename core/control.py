@@ -179,7 +179,7 @@ class Control:
         plain_name = name.strip('.')
         if plain_name.startswith('ext'):
             plain_name = plain_name[3:]
-        lib_name = 'ext.{}'.format(name)
+        lib_name = 'ext.{}'.format(plain_name)
 
         if lib_name in self.bot.extensions:
             await self.bot.say('`{}` extension is already loaded'
@@ -217,7 +217,7 @@ class Control:
             plain_name = name.strip('.')
             if plain_name.startswith('ext'):
                 plain_name = plain_name[3:]
-            lib_name = 'ext.{}'.format(name)
+            lib_name = 'ext.{}'.format(plain_name)
 
             if lib_name in self.bot.extensions:
                 self.bot.unload_extension(lib_name)
@@ -241,7 +241,7 @@ class Control:
             plain_name = name.strip('.')
             if plain_name.startswith('ext'):
                 plain_name = plain_name[3:]
-            lib_name = 'ext.{}'.format(name)
+            lib_name = 'ext.{}'.format(plain_name)
 
             if lib_name in self.bot.extensions:
                 self.bot.unload_extension(lib_name)
