@@ -20,3 +20,6 @@ class RedisQListener:
     def __init__(self, bot: commands.Bot):
         self.logger = logging.getLogger(__name__)
         self.logger.info("%s %s", type(self).__name__, 3)
+
+    def __unload(self):
+        self.logger.info("unloaded")
