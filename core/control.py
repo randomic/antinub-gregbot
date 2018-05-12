@@ -175,45 +175,45 @@ class Control:
     @ext.command()
     async def load(self, name: str = None):
         'Attempt to load the specified extension'
-        if name:
-            if name.startswith('ext.'):
-                plain_name = name[4:]
-                lib_name = name
-            else:
-                plain_name = name
-                lib_name = 'ext.{}'.format(name)
-
-            if lib_name not in self.bot.extensions:
-                try:
-                    self.bot.load_extension(lib_name)
-                    self.logger.info('Successfully loaded extension: %s',
-                                     plain_name)
-                    await self.bot.say('Successfully loaded extension: `{}`'
-                                       .format(plain_name))
-                    loaded_extensions = self.bot.config['loaded_extensions']
-                    loaded_extensions.append(plain_name)
-                    self.bot.config['loaded_extensions'] = loaded_extensions
-                except Exception as exc:
-                    if isinstance(exc, ModuleNotFoundError) and getattr(
-                            exc, "name") == lib_name:
-                        await self.bot.say('Extension not found: `{}`'
-                                           .format(plain_name))
-                        return
-
-                    error_str = _format_final_exc_line(
-                        type(exc).__qualname__, exc).strip()
-                    self.logger.warning('Failed to load extension: %s - %s',
-                                        plain_name, error_str)
-                    await self.bot.say(
-                        'Failed to load extension: `{}` - `{}`'.format(
-                            plain_name, error_str))
-                    if lib_name in sys.modules:
-                        del sys.modules[lib_name]
-            else:
-                await self.bot.say('`{}` extension is already loaded'
-                                   .format(plain_name))
-        else:
+        if not name:
             await self.bot.say('You must specify an extension to load')
+            return
+
+        if name.startswith('ext.'):
+            plain_name = name[4:]
+            lib_name = name
+        else:
+            plain_name = name
+            lib_name = 'ext.{}'.format(name)
+
+        if lib_name in self.bot.extensions:
+            await self.bot.say('`{}` extension is already loaded'
+                               .format(plain_name))
+            return
+
+        try:
+            self.bot.load_extension(lib_name)
+            self.logger.info('Successfully loaded extension: %s', plain_name)
+            await self.bot.say('Successfully loaded extension: `{}`'
+                               .format(plain_name))
+            loaded_extensions = self.bot.config['loaded_extensions']
+            loaded_extensions.append(plain_name)
+            self.bot.config['loaded_extensions'] = loaded_extensions
+        except Exception as exc:
+            if isinstance(exc, ModuleNotFoundError) and getattr(
+                    exc, "name") == lib_name:
+                await self.bot.say('Extension not found: `{}`'
+                                   .format(plain_name))
+                return
+
+            error_str = _format_final_exc_line(type(exc).__qualname__,
+                                               exc).strip()
+            self.logger.warning('Failed to load extension: %s - %s',
+                                plain_name, error_str)
+            await self.bot.say('Failed to load extension: `{}` - `{}`'.format(
+                plain_name, error_str))
+            if lib_name in sys.modules:
+                del sys.modules[lib_name]
 
     @ext.command()
     async def unload(self, name: str = None):
