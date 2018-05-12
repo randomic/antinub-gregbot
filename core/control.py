@@ -193,10 +193,13 @@ class Control:
                     loaded_extensions = self.bot.config['loaded_extensions']
                     loaded_extensions.append(plain_name)
                     self.bot.config['loaded_extensions'] = loaded_extensions
-                except ImportError as exc:
-                    await self.bot.say('Extension not found: {}'
-                                       .format(plain_name))
                 except Exception as exc:
+                    if isinstance(exc, ModuleNotFoundError) and getattr(
+                            exc, "name") == lib_name:
+                        await self.bot.say('Extension not found: `{}`'
+                                           .format(plain_name))
+                        return
+
                     error_str = _format_final_exc_line(
                         type(exc).__qualname__, exc).strip()
                     self.logger.warning('Failed to load extension: %s - %s',
