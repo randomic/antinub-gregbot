@@ -43,7 +43,7 @@ class Control:
 
     async def on_error(self, event, *dummy_args, **dummy_kwargs):
         'Assign a handler for errors raised by events'
-        message = "Exception in '{}' event:".format(event)
+        message = "Exception in `{}` event:".format(event)
         exc_info = sys.exc_info()
         self.logger.error(message, exc_info=exc_info)
         await self.error_notification(message, exc_info)
@@ -227,13 +227,13 @@ class Control:
                 self.bot.unload_extension(lib_name)
                 self.logger.info('Successfully unloaded extension: %s',
                                  plain_name)
-                await self.bot.say('Successfully unloaded extension: {}'
+                await self.bot.say('Successfully unloaded extension: `{}`'
                                    .format(plain_name))
                 loaded_extensions = self.bot.config['loaded_extensions']
                 loaded_extensions.remove(plain_name)
                 self.bot.config['loaded_extensions'] = loaded_extensions
             else:
-                await self.bot.say('{} extension is not loaded'
+                await self.bot.say('`{}` extension is not loaded'
                                    .format(plain_name))
         else:
             await self.bot.say('You must specify an extension to unload')
@@ -257,15 +257,15 @@ class Control:
                     self.bot.load_extension(lib_name)
                     self.logger.info('Successfully loaded extension: %s',
                                      plain_name)
-                    await self.bot.say('Successfully reloaded extension: {}'
+                    await self.bot.say('Successfully reloaded extension: `{}`'
                                        .format(plain_name))
                 except Exception as exc:
                     self.logger.warning('Failed to reload extension: %s - %s',
                                         plain_name, exc)
-                    await self.bot.say('Failed to reload extension: {}'
+                    await self.bot.say('Failed to reload extension: `{}`'
                                        .format(plain_name))
             else:
-                await self.bot.say('{} extension is not loaded'
+                await self.bot.say('`{}` extension is not loaded'
                                    .format(plain_name))
         else:
             await self.bot.say('You must specify an extension to reload')
