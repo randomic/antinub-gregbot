@@ -10,4 +10,7 @@ def setup(bot: commands.Bot):
 class KillmailPoster:
     def __init__(self, bot):
         self.logger = logging.getLogger(__name__)
-        self.logger.info("%s %s", type(self).__name__, 2)
+        self.logger.info("%s %s", type(self).__name__, 3)
+
+    def __unload(self):
+        self.logger.info("unloaded")
