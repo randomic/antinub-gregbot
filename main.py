@@ -11,7 +11,7 @@ import discord.ext.commands as commands
 from tinydb import TinyDB
 
 from utils.log import configure_logging
-from utils.table import KeyValueTable
+from utils.kvtable import KeyValueTable
 
 
 def start_bot():
