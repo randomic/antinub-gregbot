@@ -176,7 +176,7 @@ class Control:
             await self.bot.say('You must specify an extension to load')
             return
 
-        plain_name = name.strip('.')
+        plain_name = name.replace('.', '')
         if plain_name.startswith('ext'):
             plain_name = plain_name[3:]
         lib_name = 'ext.{}'.format(plain_name)
@@ -214,7 +214,7 @@ class Control:
     async def unload(self, name: str = ''):
         'Attempt to unload the specified extension'
         if name:
-            plain_name = name.strip('.')
+            plain_name = name.replace('.', '')
             if plain_name.startswith('ext'):
                 plain_name = plain_name[3:]
             lib_name = 'ext.{}'.format(plain_name)
@@ -238,7 +238,7 @@ class Control:
     async def ext_reload(self, name: str = ''):
         'Attempt to unload then load the specified extension'
         if name:
-            plain_name = name.strip('.')
+            plain_name = name.replace('.', '')
             if plain_name.startswith('ext'):
                 plain_name = plain_name[3:]
             lib_name = 'ext.{}'.format(plain_name)
