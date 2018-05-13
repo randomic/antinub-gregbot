@@ -5,8 +5,12 @@ Polls zKillboard's redisQ API and dispatches relevant killmails as an event.
 '''
 import asyncio
 import logging
+from http.client import responses
 
+import aiohttp
 import discord.ext.commands as commands
+
+REDISQ_URL = 'https://redisq.zkillboard.com/listen.php'
 
 
 def setup(bot: commands.Bot):
@@ -28,7 +32,7 @@ class RedisQListener:
 
     def listen_task_start(self, delay: int = 0) -> asyncio.Task:
         task = self.bot.loop.create_task(self.wait_for_package(delay))
-        self.redisq_polling_task.add_done_callback(self.listen_task_done)
+        task.add_done_callback(self.listen_task_done)
         return task
 
     def listen_task_done(self, task: asyncio.Task):
@@ -39,7 +43,7 @@ class RedisQListener:
         except asyncio.CancelledError:
             return
         except Exception:
-            message = 'Error in killmail retrieve task'
+            message = 'Unexpected error in killmail retrieval'
             self.logger.exception(message)
             delay = 10
 
@@ -47,7 +51,9 @@ class RedisQListener:
 
     async def wait_for_package(self, delay: int):
         await asyncio.sleep(delay)
-        raise NotImplementedError
+        async with self.bot.http.session.get(REDISQ_URL) as resp:
+            self.logger.info('Response from RedisQ: %s %s', resp.status,
+                             responses[resp.status])
 
     def process_result(self, package: dict):
         raise NotImplementedError
