@@ -198,7 +198,7 @@ class Control:
             if isinstance(exc, ModuleNotFoundError) and getattr(
                     exc, "name") == lib_name:
                 await self.bot.say('Extension not found: `{}`'
-                                   .format(plain_name))
+                                   .format(name))
                 return
 
             error_str = _format_final_exc_line(type(exc).__qualname__,
