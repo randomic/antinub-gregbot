@@ -1,6 +1,6 @@
-"""
+'''
 Abstraction of TinyDB table for storing config
-"""
+'''
 from tinydb import Query
 
 
