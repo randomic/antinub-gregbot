@@ -197,14 +197,12 @@ class Control:
         except Exception as exc:
             if isinstance(exc, ModuleNotFoundError) and getattr(
                     exc, "name") == lib_name:
-                await self.bot.say('Extension not found: `{}`'
-                                   .format(name))
+                await self.bot.say('Extension not found: `{}`'.format(name))
                 return
 
             error_str = _format_final_exc_line(type(exc).__qualname__,
                                                exc).strip()
-            self.logger.warning('Failed to load extension: %s - %s',
-                                plain_name, error_str)
+            self.logger.exception('Failed to load extension: %s', plain_name)
             await self.bot.say('Failed to load extension: `{}` - `{}`'.format(
                 plain_name, error_str))
             if lib_name in sys.modules:
@@ -253,9 +251,9 @@ class Control:
                                      plain_name)
                     await self.bot.say('Successfully reloaded extension: `{}`'
                                        .format(plain_name))
-                except Exception as exc:
-                    self.logger.warning('Failed to reload extension: %s - %s',
-                                        plain_name, exc)
+                except Exception:
+                    self.logger.exception('Failed to reload extension: %s',
+                                          plain_name)
                     await self.bot.say('Failed to reload extension: `{}`'
                                        .format(plain_name))
             else:
