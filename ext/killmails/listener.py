@@ -59,8 +59,9 @@ class RedisQListener:
                 resp.raise_for_status()
                 self.backoff_wait = INITIAL_BACKOFF
                 package = await resp.json()
-                if package['package']:
-                    return package
+                contents: dict = package['package']
+                if contents:
+                    return contents
                 self.logger.debug('RedisQ returned null package')
 
         except (aiohttp.errors.HttpProcessingError,
