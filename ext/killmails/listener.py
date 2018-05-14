@@ -1,7 +1,7 @@
 '''
 Killmail fetching cog for antinub-gregbot project.
 
-Polls zKillboard's redisQ API and dispatches relevant killmails as an event.
+Polls zKillboard's RedisQ API and dispatches killmails as an event.
 '''
 import asyncio
 import logging
@@ -20,8 +20,7 @@ def setup(bot: commands.Bot):
 
 
 class RedisQListener:
-    '''Polls zKillboard's redisQ API and dispatches events containing killmails
-    which pass the relevancy test'''
+    '''Poll RedisQ and dispatch killmail event containing recieved package'''
     backoff_wait = INITIAL_BACKOFF
 
     def __init__(self, bot: commands.Bot):
