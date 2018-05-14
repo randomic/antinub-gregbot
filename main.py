@@ -5,7 +5,6 @@ Configures logging, loads startup extensions and starts the bot.
 '''
 import logging
 import sys
-from traceback import _format_final_exc_line
 
 import discord.ext.commands as commands
 from tinydb import TinyDB
@@ -94,10 +93,7 @@ def load_extensions(bot):
                 if ext_mod in sys.modules:
                     del sys.modules[ext_mod]
                 loaded_extensions.remove(ext)
-                error_str = _format_final_exc_line(
-                    type(error).__qualname__, error).strip()
-                logger.warning('Failed to load extension: %s - %s', ext,
-                               error_str)
+                logger.exception('Failed to load extension: %s', ext)
         else:
             logger.warning('Extension with same name already loaded: %s', ext)
     bot.config['loaded_extensions'] = loaded_extensions
