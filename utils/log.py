@@ -48,6 +48,7 @@ def configure_logging():
 
     """
     logging.config.dictConfig(DEFAULT_LOGGING)
+    logging.captureWarnings(True)
 
     for handler in logging.getLogger().handlers:
         if isinstance(handler, logging.handlers.RotatingFileHandler):
