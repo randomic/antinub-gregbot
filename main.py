@@ -9,8 +9,8 @@ import sys
 import discord.ext.commands as commands
 from tinydb import TinyDB
 
-from utils.log import configure_logging
 from utils.kvtable import KeyValueTable
+from utils.log import configure_logging, get_logger
 
 
 def start_bot():
@@ -20,11 +20,8 @@ def start_bot():
     tdb = TinyDB('db.json')
     config = KeyValueTable(tdb, 'config')
 
-    debug = config['debug']
-    if not debug:
-        debug = False
-        config['debug'] = debug
-    logging.getLogger().setLevel(logging.DEBUG if debug else logging.INFO)
+    if config['debug'] is None:
+        config['debug'] = False
 
     cmd_prefixes = config['cmd_prefixes']
     if not cmd_prefixes:
@@ -65,7 +62,7 @@ async def when_ready(bot, save_token=None):
 
     """
     await bot.wait_until_ready()
-    logger = logging.getLogger(__name__)
+    logger = get_logger(__name__, bot)
     logger.info('Logged in as %s, id: %s', bot.user.name, bot.user.id)
     if save_token:
         # If a token was given during startup, save it now we know it's valid.
@@ -76,7 +73,7 @@ async def when_ready(bot, save_token=None):
 
 def load_extensions(bot):
     'Load the startup extensions'
-    logger = logging.getLogger(__name__)
+    logger = get_logger(__name__, bot)
     logger.info('Loading core extensions')
     bot.load_extension('core')
     logger.info('Successfully loaded core extensions')

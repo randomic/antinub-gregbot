@@ -11,6 +11,7 @@ from traceback import _format_final_exc_line, format_exception
 import discord.ext.commands as commands
 
 import utils.checks as checks
+from utils.log import get_logger
 from utils.messaging import Paginate, notify_owner
 
 
@@ -24,7 +25,7 @@ class Control:
     bot's operation such as stopping the bot'''
 
     def __init__(self, bot):
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__, bot)
         self.bot = bot
 
         # Override default event exception handling

@@ -9,6 +9,8 @@ import logging
 import aiohttp
 import discord.ext.commands as commands
 
+from utils.log import get_logger
+
 REDISQ_URL = 'https://redisq.zkillboard.com/listen.php'
 INITIAL_BACKOFF = 0.1
 MAXIMUM_BACKOFF = 3600
@@ -24,7 +26,7 @@ class RedisQListener:
     backoff_wait = INITIAL_BACKOFF
 
     def __init__(self, bot: commands.Bot):
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__, bot)
         self.bot = bot
         self.redisq_polling_task = self.listen_task_start()
 

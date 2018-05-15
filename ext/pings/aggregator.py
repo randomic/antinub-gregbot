@@ -5,6 +5,7 @@ from discord.embeds import Embed
 from discord.ext import commands
 
 from config import JABBER
+from utils.log import get_logger
 from utils.messaging import Paginate, notify_owner
 
 from .discordrelay import DiscordRelay
@@ -20,7 +21,7 @@ class PingAggregator:
     from certain senders to the config defined channel'''
 
     def __init__(self, bot, config):
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__, bot)
         self.bot = bot
         self.relays = []
 

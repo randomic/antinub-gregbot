@@ -4,10 +4,10 @@ Killmail posting cog for antinub-gregbot project.
 Monitors zKillboard's redisQ api and posts killmails relevant to your corp in
 the given channel.
 '''
+import logging
 from asyncio import CancelledError, sleep
 from datetime import datetime
 from socket import AF_INET
-import logging
 from traceback import format_exception
 
 from aiohttp import ClientResponseError, ClientSession, TCPConnector
@@ -15,7 +15,8 @@ from discord import Colour
 from discord.embeds import Embed
 
 from config import KILLMAILS
-from utils.messaging import notify_owner, Paginate
+from utils.log import get_logger
+from utils.messaging import Paginate, notify_owner
 
 
 def setup(bot):
@@ -28,7 +29,7 @@ class Killmails:
     killmails which match the provided rule'''
 
     def __init__(self, bot, config):
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__, bot)
         self.bot = bot
         self.conf = config
         self.colours = {'green': Colour(0x007a00), 'red': Colour(0x7a0000)}
