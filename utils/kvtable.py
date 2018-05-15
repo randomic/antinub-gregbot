@@ -8,10 +8,10 @@ class KeyValueTable:
     """Wrapper around a TinyDB table.
 
     """
+    setting = Query()
 
     def __init__(self, tdb, name='_default'):
         self.table = tdb.table(name)
-        self.setting = Query()
 
     def get(self, key):
         """Get the value of named setting or None if it doesn't exist.
@@ -26,10 +26,10 @@ class KeyValueTable:
         """Insert or update named setting with given value.
 
         """
-        if self.table.contains(self.setting.key == key):
-            self.table.update({'value': value}, self.setting.key == key)
-        else:
-            self.table.insert({'key': key, 'value': value})
+        self.table.upsert({
+            'key': key,
+            'value': value
+        }, self.setting.key == key)
 
     def __getitem__(self, key):
         return self.get(key)
