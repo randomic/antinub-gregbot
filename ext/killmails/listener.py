@@ -41,6 +41,9 @@ class RedisQListener:
     def listen_task_done(self, task: asyncio.Task):
         try:
             package = task.result()
+            if not package:
+                self.logger.debug('Ignoring null package')
+                return
             self.bot.dispatch('killmail', package)
         except asyncio.CancelledError:
             return
