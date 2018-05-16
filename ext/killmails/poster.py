@@ -25,10 +25,9 @@ class KillmailPoster(EsiCog):
 
     async def on_killmail(self, package: dict):
         if not await self.is_relevant(package):
-            self.logger.info("Ignoring irrelevant killmail")
+            self.logger.debug("Ignoring irrelevant killmail")
             return
         self.logger.info("esi_app")
-        # esi_app = await self.get_esi_app()
 
     async def is_relevant(self, package: dict) -> bool:
         victim = package["killmail"]["victim"]
@@ -58,4 +57,25 @@ class KillmailPoster(EsiCog):
         return [entry["value"] for entry in corps]
 
     async def get_relevant_alliances(self) -> typing.List[int]:
-        return []
+        corp_ids = set()
+        alliances = self.relevancy_table.search(
+            self.relevancy.type == "alliance")
+        alliance_ids = [entry["value"] for entry in alliances]
+
+        for alliance_id in alliance_ids:
+            alliance_corp_ids = await self.get_alliance_corporations(
+                alliance_id)
+            corp_ids.update(alliance_corp_ids)
+
+        return list(corp_ids)
+
+    async def get_alliance_corporations(self,
+                                        alliance_id: int) -> typing.List[int]:
+        esi_app = await self.get_esi_app()
+        operation = esi_app.op["get_alliances_alliance_id_corporations"](
+            alliance_id=alliance_id)
+
+        esi_client = await self.get_esi_client()
+        # response = esi_client.request(operation)
+        response = await self.esi_request(self.bot.loop, esi_client, operation)
+        return response.data
