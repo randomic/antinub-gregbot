@@ -26,6 +26,7 @@ class KillmailPoster(EsiCog):
         if not await self.is_relevant(package):
             self.logger.debug("Ignoring irrelevant killmail")
             return
+            # Rig group_ids are 781-786 inclusive
         self.logger.info("esi_app")
 
     async def is_relevant(self, package: dict) -> bool:
