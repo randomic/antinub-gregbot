@@ -12,9 +12,10 @@ import discord.ext.commands as commands
 from utils.log import get_logger
 
 REDISQ_URL = 'https://redisq.zkillboard.com/listen.php'
-INITIAL_BACKOFF = 0.1
+INITIAL_BACKOFF = 10
 MAXIMUM_BACKOFF = 3600
 EXPONENTIAL_BACKOFF_FACTOR = 2
+ZKILLBOARD_BASE_URL = 'https://zkillboard.com/kill/{:d}/'
 
 
 def setup(bot: commands.Bot):
@@ -44,7 +45,10 @@ class RedisQListener:
             if not package:
                 self.logger.debug('Ignoring null package')
                 return
-            self.bot.dispatch('killmail', package)
+            self.bot.dispatch(
+                'killmail',
+                package,
+                debug_info=ZKILLBOARD_BASE_URL.format(package["killID"]))
         except asyncio.CancelledError:
             return
         except FetchError as exception:

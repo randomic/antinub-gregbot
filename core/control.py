@@ -35,16 +35,17 @@ class Control:
     async def error_notification(self, message, exc_info):
         'Send an error notification to the bot owner'
         paginate = Paginate(''.join(format_exception(*exc_info)),
-                            ('```Python\n', '```'))
+                            ('\n```Python\n', '```'))
         notification = [paginate.prefix_next(message)] + list(paginate)
 
         if notification != self.last_error:
             await notify_owner(self.bot, notification)
             self.last_error = notification
 
-    async def on_error(self, event, *dummy_args, **dummy_kwargs):
+    async def on_error(self, event, *dummy_args, **kwargs):
         'Assign a handler for errors raised by events'
-        message = "Exception in `{}` event:".format(event)
+        message = "Exception in `{}` event: {}"
+        message = message.format(event, kwargs.pop("debug_info", ""))
         exc_info = sys.exc_info()
         self.logger.error(message, exc_info=exc_info)
         await self.error_notification(message, exc_info)

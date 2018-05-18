@@ -7,7 +7,6 @@ from utils.esicog import EsiCog
 from utils.log import get_logger
 
 ESI_SWAGGER_JSON = 'https://esi.evetech.net/latest/swagger.json'
-ZKILLBOARD_BASE_URL = 'https://zkillboard.com/kill/{:d}/'
 
 
 def setup(bot: commands.Bot):
@@ -23,11 +22,15 @@ class KillmailPoster(EsiCog):
         self.relevancy_table = self.bot.tdb.table("killmails.relevancies")
         self.relevancy = tinydb.Query()
 
-    async def on_killmail(self, package: dict):
-        if not await self.is_relevant(package):
-            self.logger.debug("Ignoring irrelevant killmail")
-            return
-        self.logger.info("esi_app")
+    async def on_killmail(self, package: dict, **dummy_kwargs):
+        raise Exception("Fake exception")
+        try:
+            if not await self.is_relevant(package):
+                self.logger.debug("Ignoring irrelevant killmail")
+                return
+            self.logger.info("esi_app")
+        except Exception as exception:
+            raise
 
     async def is_relevant(self, package: dict) -> bool:
         victim = package["killmail"]["victim"]
