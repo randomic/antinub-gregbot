@@ -1,6 +1,7 @@
 import typing
 
 import tinydb
+from discord import Colour
 from discord.ext import commands
 
 from utils.esicog import EsiCog
@@ -32,12 +33,16 @@ class KillmailPoster(EsiCog):
     async def is_relevant(self, package: dict) -> bool:
         victim = package["killmail"]["victim"]
         if await self.is_corporation_relevant(victim["corporation_id"]):
+            #  Mark killmail as a loss
+            package["colour"] = Colour.dark_red()
             return True
 
         for attacker in package["killmail"]["attackers"]:
             if "corporation_id" not in attacker:
                 continue  # Some NPCs do not have a corporation.
             if await self.is_corporation_relevant("corporation_id"):
+                #  Mark killmail as a kill
+                package["colour"] = Colour.dark_green()
                 return True
 
         return False
