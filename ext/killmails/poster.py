@@ -1,7 +1,7 @@
 import typing
 
 import tinydb
-from discord import Colour
+import discord
 from discord.ext import commands
 
 from utils.esicog import EsiCog
@@ -20,6 +20,7 @@ class KillmailPoster(EsiCog):
 
         self.logger = get_logger(__name__, bot)
         self.bot = bot
+        self.config_table = self.bot.tdb.table("killmails.config")
         self.relevancy_table = self.bot.tdb.table("killmails.relevancies")
         self.relevancy = tinydb.Query()
 
@@ -28,13 +29,22 @@ class KillmailPoster(EsiCog):
             self.logger.debug("Ignoring irrelevant killmail")
             return
             # Flags 92, 93, 94 are rig slots
-        self.logger.info("esi_app")
+        embed = self.generate_embed(package)
+        message = await self.bot.send_message(
+            self.config_table["channel"], embed=embed)
+        await self.add_reactions(message)
+
+    async def add_reactions(self, message: message.Message):
+        pass
+
+    def generate_embed(self, package: dict) -> discord.Embed:
+        pass
 
     async def is_relevant(self, package: dict) -> bool:
         victim = package["killmail"]["victim"]
         if await self.is_corporation_relevant(victim["corporation_id"]):
             #  Mark killmail as a loss
-            package["colour"] = Colour.dark_red()
+            package["colour"] = discord.Colour.dark_red()
             return True
 
         for attacker in package["killmail"]["attackers"]:
@@ -42,7 +52,7 @@ class KillmailPoster(EsiCog):
                 continue  # Some NPCs do not have a corporation.
             if await self.is_corporation_relevant("corporation_id"):
                 #  Mark killmail as a kill
-                package["colour"] = Colour.dark_green()
+                package["colour"] = discord.Colour.dark_green()
                 return True
 
         return False
