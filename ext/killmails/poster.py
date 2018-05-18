@@ -23,14 +23,10 @@ class KillmailPoster(EsiCog):
         self.relevancy = tinydb.Query()
 
     async def on_killmail(self, package: dict, **dummy_kwargs):
-        raise Exception("Fake exception")
-        try:
-            if not await self.is_relevant(package):
-                self.logger.debug("Ignoring irrelevant killmail")
-                return
-            self.logger.info("esi_app")
-        except Exception as exception:
-            raise
+        if not await self.is_relevant(package):
+            self.logger.debug("Ignoring irrelevant killmail")
+            return
+        self.logger.info("esi_app")
 
     async def is_relevant(self, package: dict) -> bool:
         victim = package["killmail"]["victim"]
