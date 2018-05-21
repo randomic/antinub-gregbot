@@ -20,23 +20,27 @@ def start_bot():
     tdb = TinyDB('db.json')
     config = KeyValueTable(tdb, 'config')
 
-    if config['debug'] is None:
+    try:
+        config['debug']
+    except KeyError:
         config['debug'] = False
 
-    cmd_prefixes = config['cmd_prefixes']
-    if not cmd_prefixes:
+    try:
+        cmd_prefixes = config['cmd_prefixes']
+    except KeyError:
         cmd_prefixes = []
         config['cmd_prefixes'] = cmd_prefixes
 
-    token = config['token']
-    if not token:
+    save_token = False
+    try:
+        token = config['token']
+    except KeyError:
         token = input('Enter token: ')
         save_token = (config, token)
-    else:
-        save_token = None
 
-    owner_id = config['owner_id']
-    if not owner_id:
+    try:
+        owner_id = config['owner_id']
+    except KeyError:
         owner_id = input('Enter owner ID: ')
         config['owner_id'] = owner_id
 
