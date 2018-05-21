@@ -35,7 +35,8 @@ class KillmailPoster(EsiCog):
             return
         embed = await self.generate_embed(package)
         message = await self.bot.send_message(
-            self.config_table["channel"], embed=embed)
+            self.bot.get_channel(self.config_table["channel"]),
+            embed=embed)
         await self.add_reactions(message)
 
     async def add_reactions(self, message: discord.Message):
