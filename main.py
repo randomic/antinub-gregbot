@@ -78,7 +78,7 @@ def load_extensions(bot):
     bot.load_extension('core')
     logger.info('Successfully loaded core extensions')
 
-    loaded_extensions = bot.config['loaded_extensions'] or []
+    loaded_extensions = bot.config.get('loaded_extensions', [])
 
     for ext in loaded_extensions.copy():
         ext_mod = 'ext.{}'.format(ext)
