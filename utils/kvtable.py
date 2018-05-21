@@ -14,7 +14,7 @@ class KeyValueTable:
         self.table = tdb.table(name)
 
     def get(self, key, default=None):
-        """Get the value of named setting or default if it doesn't exist.
+        """Return value of named setting or default if it doesn't exist.
 
         """
         result = self.table.get(self.setting.key == key)
@@ -32,6 +32,9 @@ class KeyValueTable:
         }, self.setting.key == key)
 
     def __getitem__(self, key):
+        """Return value of named setting or raise KeyError if it doesn't exist.
+
+        """
         result = self.table.get(self.setting.key == key)
         if result is not None:
             return result['value']
