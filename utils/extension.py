@@ -22,13 +22,14 @@ def setup(module: typing.types.ModuleType,
                 name = '{}.{}'.format(module.__name__, extension)
                 bot.load_extension(name)
         except Exception as exception:
-            message = "{} {}".format(name, str(exception))
+            message = "{} ({})".format(str(exception), name)
             for extension in sub_extensions:
                 name = '{}.{}'.format(module.__name__, extension)
                 bot.unload_extension(name)
                 if name in sys.modules:
                     del sys.modules[name]
-            raise type(exception)(message) from exception
+            raise type(exception)(message).with_traceback(
+                exception.__traceback__) from None
 
     return inner
 
