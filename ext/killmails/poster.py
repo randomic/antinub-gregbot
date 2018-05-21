@@ -1,10 +1,11 @@
 import typing
 
-import tinydb
 import discord
+import tinydb
 from discord.ext import commands
 
 from utils.esicog import EsiCog
+from utils.kvtable import KeyValueTable
 from utils.log import get_logger
 
 ESI_SWAGGER_JSON = 'https://esi.evetech.net/latest/swagger.json'
@@ -20,7 +21,7 @@ class KillmailPoster(EsiCog):
 
         self.logger = get_logger(__name__, bot)
         self.bot = bot
-        self.config_table = self.bot.tdb.table("killmails.config")
+        self.config_table = KeyValueTable(self.bot.tdb, "killmails.config")
         self.relevancy_table = self.bot.tdb.table("killmails.relevancies")
         self.relevancy = tinydb.Query()
 
