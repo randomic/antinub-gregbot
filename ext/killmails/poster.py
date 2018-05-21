@@ -1,7 +1,7 @@
 import typing
 
-import discord
 import tinydb
+import discord
 from discord.ext import commands
 
 from utils.esicog import EsiCog
@@ -35,7 +35,7 @@ class KillmailPoster(EsiCog):
             self.config_table["channel"], embed=embed)
         await self.add_reactions(message)
 
-    async def add_reactions(self, message: message.Message):
+    async def add_reactions(self, message: discord.Message):
         pass
 
     def generate_embed(self, package: dict) -> discord.Embed:
