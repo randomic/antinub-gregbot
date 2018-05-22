@@ -6,6 +6,8 @@ from datetime import datetime
 
 import discord.ext.commands as commands
 
+from utils.log import get_logger
+
 
 def setup(bot):
     "Adds the cog to the provided discord bot"
@@ -14,12 +16,11 @@ def setup(bot):
 
 class Eve:
     def __init__(self, bot):
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__, bot)
         self.bot = bot
         self.fmt = "%H:%M:%S"
 
     @commands.command()
     async def evetime(self):
         return await self.bot.say(
-            "Current EVE time: " + datetime.utcnow().strftime(self.fmt)
-        )
+            "Current EVE time: " + datetime.utcnow().strftime(self.fmt))
