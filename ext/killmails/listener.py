@@ -11,11 +11,12 @@ import discord.ext.commands as commands
 
 from utils.log import get_logger
 
+from .poster import ZKILLBOARD_BASE_URL
+
 REDISQ_URL = 'https://redisq.zkillboard.com/listen.php'
 INITIAL_BACKOFF = 10
 MAXIMUM_BACKOFF = 3600
 EXPONENTIAL_BACKOFF_FACTOR = 2
-ZKILLBOARD_BASE_URL = 'https://zkillboard.com/kill/{:d}/'
 
 
 def setup(bot: commands.Bot):

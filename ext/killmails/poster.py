@@ -9,9 +9,8 @@ from utils.esicog import EsiCog
 from utils.kvtable import KeyValueTable
 from utils.log import get_logger
 
-from .listener import ZKILLBOARD_BASE_URL
-
 ESI_SWAGGER_JSON = 'https://esi.evetech.net/latest/swagger.json'
+ZKILLBOARD_BASE_URL = 'https://zkillboard.com/kill/{:d}/'
 EVE_IMAGESERVER_BASE_URL = "https://imageserver.eveonline.com/Type/{:d}_64.png"
 
 
@@ -35,8 +34,7 @@ class KillmailPoster(EsiCog):
             return
         embed = await self.generate_embed(package)
         message = await self.bot.send_message(
-            self.bot.get_channel(self.config_table["channel"]),
-            embed=embed)
+            self.bot.get_channel(self.config_table["channel"]), embed=embed)
         await self.add_reactions(message)
 
     async def add_reactions(self, message: discord.Message):
