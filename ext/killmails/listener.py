@@ -35,6 +35,13 @@ class RedisQListener:
     def __unload(self):
         self.redisq_polling_task.cancel()
 
+    def get_health(self):
+        'Returns a string describing the status of this cog'
+        if not self.redisq_polling_task.done():
+            return '\n  \u2714 Listening'
+
+        return '\n  \u2716 Not listening'
+
     def listen_task_start(self) -> asyncio.Task:
         task = self.bot.loop.create_task(self.wait_for_package())
         task.add_done_callback(self.listen_task_done)
