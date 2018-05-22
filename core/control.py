@@ -6,11 +6,12 @@ Contains several commands useful for controlling/debugging the bot
 import logging
 import sys
 from collections import deque
-from traceback import format_exception
+from traceback import _format_final_exc_line, format_exception
 
 import discord.ext.commands as commands
 
 import utils.checks as checks
+from utils.log import get_logger
 from utils.messaging import Paginate, notify_owner
 
 
@@ -22,8 +23,9 @@ def setup(bot):
 class Control:
     '''A cog defining commands for controlling the
     bot's operation such as stopping the bot'''
+
     def __init__(self, bot):
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__, bot)
         self.bot = bot
 
         # Override default event exception handling
@@ -32,18 +34,18 @@ class Control:
 
     async def error_notification(self, message, exc_info):
         'Send an error notification to the bot owner'
-        paginate = Paginate(
-            ''.join(format_exception(*exc_info)), ('```Python\n', '```')
-        )
+        paginate = Paginate(''.join(format_exception(*exc_info)),
+                            ('\n```Python\n', '```'))
         notification = [paginate.prefix_next(message)] + list(paginate)
 
         if notification != self.last_error:
             await notify_owner(self.bot, notification)
             self.last_error = notification
 
-    async def on_error(self, event, *dummy_args, **dummy_kwargs):
+    async def on_error(self, event, *dummy_args, **kwargs):
         'Assign a handler for errors raised by events'
-        message = "Exception in '{}' event:".format(event)
+        message = "Exception in `{}` event: {}"
+        message = message.format(event, kwargs.pop("debug_info", ""))
         exc_info = sys.exc_info()
         self.logger.error(message, exc_info=exc_info)
         await self.error_notification(message, exc_info)
@@ -53,16 +55,16 @@ class Control:
         logger = self.logger if not ctx.cog else ctx.cog.logger
 
         if isinstance(exception, commands.CheckFailure):
-            logger.warning('{} {} attempted to use {} command'.format(
-                ctx.message.author.name,
-                ctx.message.author.mention, ctx.command))
+            logger.warning('{} {} attempted to use `{}` command'.format(
+                ctx.message.author.name, ctx.message.author.mention,
+                ctx.command))
         elif isinstance(exception, commands.CommandNotFound):
-            logger.debug(exception)
+            logger.info(exception)
         else:
-            message = "Exception in '{}' command:".format(ctx.command)
+            message = "Exception in `{}` command:".format(ctx.command)
             exc_info = (type(exception), exception, exception.__traceback__)
             logger.error(message, exc_info=exc_info)
-            self.error_notification(message, exc_info)
+            await self.error_notification(message, exc_info)
 
     @commands.command()
     @commands.check(checks.is_owner)
@@ -158,10 +160,7 @@ class Control:
     @ext.command(name='list')
     async def ext_list(self):
         'List the currently loaded extensions'
-        extensions = []
-        for ext in self.bot.extensions.keys():
-            if ext.startswith('ext.'):
-                extensions.append(ext.split('.')[-1])
+        extensions = self.bot.config['loaded_extensions']
 
         if extensions:
             response = 'Currently loaded extensions:\n```\n'
@@ -173,79 +172,76 @@ class Control:
         await self.bot.say(response)
 
     @ext.command()
-    async def load(self, name: str = None):
+    async def load(self, name: str = ''):
         'Attempt to load the specified extension'
-        if name:
-            if name.startswith('ext.'):
-                plain_name = name[4:]
-                lib_name = name
-            else:
-                plain_name = name
-                lib_name = 'ext.{}'.format(name)
-
-            if lib_name not in self.bot.extensions:
-                try:
-                    self.bot.load_extension(lib_name)
-                    self.logger.info('Successfully loaded extension: %s',
-                                     plain_name)
-                    await self.bot.say('Successfully loaded extension: {}'
-                                       .format(plain_name))
-                    loaded_extensions = self.bot.config.get(
-                        'loaded_extensions')
-                    loaded_extensions.append(plain_name)
-                    self.bot.config.set('loaded_extensions',
-                                        loaded_extensions)
-                except ImportError as exc:
-                    await self.bot.say('Extension not found: {}'
-                                       .format(plain_name))
-                except Exception as exc:
-                    await self.bot.say('Failed to load extension: {} - {}'
-                                       .format(plain_name, exc))
-                    self.logger.warning('Failed to load extension: %s',
-                                        plain_name)
-                    raise exc
-            else:
-                await self.bot.say('{} extension is already loaded'
-                                   .format(plain_name))
-        else:
+        if not name:
             await self.bot.say('You must specify an extension to load')
+            return
+
+        plain_name = name.replace('.', '')
+        if plain_name.startswith('ext'):
+            plain_name = plain_name[3:]
+        lib_name = 'ext.{}'.format(plain_name)
+
+        if lib_name in self.bot.extensions:
+            await self.bot.say('`{}` extension is already loaded'
+                               .format(plain_name))
+            return
+
+        try:
+            self.bot.load_extension(lib_name)
+            self.logger.info('Successfully loaded extension: %s', plain_name)
+            await self.bot.say('Successfully loaded extension: `{}`'
+                               .format(plain_name))
+            loaded_extensions = self.bot.config['loaded_extensions']
+            loaded_extensions.append(plain_name)
+            self.bot.config['loaded_extensions'] = loaded_extensions
+        except Exception as exc:
+            if isinstance(exc, ModuleNotFoundError) and getattr(
+                    exc, "name") == lib_name:
+                await self.bot.say('Extension not found: `{}`'.format(name))
+                return
+
+            error_str = _format_final_exc_line(type(exc).__qualname__,
+                                               exc).strip()
+            self.logger.exception('Failed to load extension: %s', plain_name)
+            await self.bot.say('Failed to load extension: `{}` - `{}`'.format(
+                plain_name, error_str))
+            if lib_name in sys.modules:
+                del sys.modules[lib_name]
 
     @ext.command()
-    async def unload(self, name: str = None):
+    async def unload(self, name: str = ''):
         'Attempt to unload the specified extension'
         if name:
-            if name.startswith('ext.'):
-                plain_name = name[4:]
-                lib_name = name
-            else:
-                plain_name = name
-                lib_name = 'ext.{}'.format(name)
+            plain_name = name.replace('.', '')
+            if plain_name.startswith('ext'):
+                plain_name = plain_name[3:]
+            lib_name = 'ext.{}'.format(plain_name)
 
             if lib_name in self.bot.extensions:
                 self.bot.unload_extension(lib_name)
                 self.logger.info('Successfully unloaded extension: %s',
                                  plain_name)
-                await self.bot.say('Successfully unloaded extension: {}'
+                await self.bot.say('Successfully unloaded extension: `{}`'
                                    .format(plain_name))
-                loaded_extensions = self.bot.config.get('loaded_extensions')
+                loaded_extensions = self.bot.config['loaded_extensions']
                 loaded_extensions.remove(plain_name)
-                self.bot.config.set('loaded_extensions', loaded_extensions)
+                self.bot.config['loaded_extensions'] = loaded_extensions
             else:
-                await self.bot.say('{} extension is not loaded'
+                await self.bot.say('`{}` extension is not loaded'
                                    .format(plain_name))
         else:
             await self.bot.say('You must specify an extension to unload')
 
     @ext.command(name='reload')
-    async def ext_reload(self, name: str = None):
+    async def ext_reload(self, name: str = ''):
         'Attempt to unload then load the specified extension'
         if name:
-            if name.startswith('ext.'):
-                plain_name = name[4:]
-                lib_name = name
-            else:
-                plain_name = name
-                lib_name = 'ext.{}'.format(name)
+            plain_name = name.replace('.', '')
+            if plain_name.startswith('ext'):
+                plain_name = plain_name[3:]
+            lib_name = 'ext.{}'.format(plain_name)
 
             if lib_name in self.bot.extensions:
                 self.bot.unload_extension(lib_name)
@@ -255,16 +251,15 @@ class Control:
                     self.bot.load_extension(lib_name)
                     self.logger.info('Successfully loaded extension: %s',
                                      plain_name)
-                    await self.bot.say('Successfully reloaded extension: {}'
+                    await self.bot.say('Successfully reloaded extension: `{}`'
                                        .format(plain_name))
-                except Exception as exc:
-                    self.logger.warning('Failed to reload extension: %s - %s',
-                                        plain_name, exc)
-                    await self.bot.say('Failed to reload extension: {}'
+                except Exception:
+                    self.logger.exception('Failed to reload extension: %s',
+                                          plain_name)
+                    await self.bot.say('Failed to reload extension: `{}`'
                                        .format(plain_name))
-                    raise exc
             else:
-                await self.bot.say('{} extension is not loaded'
+                await self.bot.say('`{}` extension is not loaded'
                                    .format(plain_name))
         else:
             await self.bot.say('You must specify an extension to reload')

@@ -6,7 +6,7 @@ from discord import PrivateChannel
 
 def is_owner(ctx):
     'Check whether or not the user is the owner of the bot'
-    return ctx.message.author.id == ctx.bot.config.get('owner_id')
+    return ctx.message.author.id == ctx.bot.config['owner_id']
 
 
 def is_private_channel(ctx):

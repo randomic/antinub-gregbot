@@ -1,13 +1,14 @@
 'KappaPride (NinjaCode2k16[tm])'
-import logging
 import datetime
 import json
+import logging
 from operator import itemgetter
 from os.path import isfile
 
 import discord.ext.commands as commands
 
 import utils.checks as checks
+from utils.log import get_logger
 
 
 def setup(bot):
@@ -18,8 +19,9 @@ def setup(bot):
 class Timerboard:
     '''A cog defining commands for controlling the
     bot's timerboard functions'''
+
     def __init__(self, bot, fname):
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__, bot)
         self.bot = bot
         self.fname = fname
 
@@ -31,9 +33,7 @@ class Timerboard:
             self.logger.info('Json successfully loaded.')
             return data
         except FileNotFoundError:
-            return {
-                "fleets": []
-            }
+            return {"fleets": []}
 
     def savejson(self, data, jsonname):
         'A function which saves a json, given the filename'
@@ -52,7 +52,7 @@ class Timerboard:
         if announce:
             response += "@everyone\n"
         fleet = fleets[index]
-        response += "**Fleet {}:**\n".format(index+1)
+        response += "**Fleet {}:**\n".format(index + 1)
         ftime = datetime.datetime.strptime(fleet["fleettime"],
                                            '%Y-%m-%dT%H:%M:%S')
         response += "```\nWhen: {}\n".format(ftime)
@@ -85,7 +85,7 @@ class Timerboard:
             await self.bot.say(response)
             return
         try:
-            fleetdtime = datetime.datetime.strptime((args[0]+args[1]),
+            fleetdtime = datetime.datetime.strptime((args[0] + args[1]),
                                                     '%d/%m/%Y%H:%M')
         except ValueError:
             await self.bot.say("You entered an invalid date or time.")
@@ -109,11 +109,11 @@ class Timerboard:
 
     @commands.command()
     @commands.check(checks.is_admin)
-    async def removefleet(self, number: int=0):
+    async def removefleet(self, number: int = 0):
         'Removes a fleet from the json via number on the list of fleets'
         fleetjson = self.loadjson(self.fname)
         if number > 0 and number <= len(fleetjson['fleets']):
-            fleetjson['fleets'].pop(number-1)
+            fleetjson['fleets'].pop(number - 1)
             self.savejson(fleetjson, self.fname)
             await self.bot.say("Fleet %d successfully removed." % number)
         else:
@@ -152,7 +152,7 @@ class Timerboard:
 
     @commands.command()
     @commands.check(checks.is_admin)
-    async def resetannouncefleets(self, number: str=''):
+    async def resetannouncefleets(self, number: str = ''):
         '''Resets the boolean specifying whether a fleet has been announced.
         Enter a fleet number to reset a specific fleet or "all" to reset all'''
         fleetjson = self.loadjson(self.fname)
@@ -160,12 +160,12 @@ class Timerboard:
         if number.isdecimal():
             number = int(number)
             if number > 0 and number <= n_fleets:
-                fleetjson['fleets'][int(number)-1]["announced"] = False
+                fleetjson['fleets'][int(number) - 1]["announced"] = False
                 self.savejson(fleetjson, self.fname)
                 await self.bot.say(
                     "Fleet %s's announcement status reset." % number)
-                self.logger.info(
-                    'User reset fleet %s\'s announcement status', number)
+                self.logger.info('User reset fleet %s\'s announcement status',
+                                 number)
                 return
         elif number == '*' or number == 'all':
             for idx in range(n_fleets):

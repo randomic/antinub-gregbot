@@ -1,8 +1,10 @@
 '''
 Module containing default logging settings for gregbot.
 '''
+import logging
 import logging.config
 
+from discord.ext import commands
 
 DEFAULT_LOGGING = {
     'version': 1,
@@ -30,9 +32,15 @@ DEFAULT_LOGGING = {
     },
     'root': {
         'handlers': ['console', 'error'],
-        'level': 'DEBUG',
+        'level': 'WARNING',
     },
 }
+
+
+def get_logger(name: str, bot: commands.Bot):
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG if bot.config["debug"] else logging.INFO)
+    return logger
 
 
 def configure_logging():
@@ -40,6 +48,7 @@ def configure_logging():
 
     """
     logging.config.dictConfig(DEFAULT_LOGGING)
+    logging.captureWarnings(True)
 
     for handler in logging.getLogger().handlers:
         if isinstance(handler, logging.handlers.RotatingFileHandler):

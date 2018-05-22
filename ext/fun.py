@@ -3,8 +3,8 @@ Meme cog made by Steveizi for antinub-gregbot project.
 
 Contains several useless but fun commands
 '''
-import logging
 import json
+import logging
 import re
 from os.path import isfile
 from random import randint
@@ -12,6 +12,7 @@ from random import randint
 import discord.ext.commands as commands
 
 import utils.checks as checks
+from utils.log import get_logger
 
 
 def setup(bot):
@@ -21,8 +22,9 @@ def setup(bot):
 
 class Fun:
     '''A cog defining meme commands'''
+
     def __init__(self, bot, fname):
-        self.logger = logging.getLogger(__name__)
+        self.logger = get_logger(__name__, bot)
         self.bot = bot
         self.guess_number = 0
         self.guess_max = 0
@@ -36,9 +38,7 @@ class Fun:
             self.logger.info('Json successfully loaded.')
             return data
         except FileNotFoundError:
-            return {
-                "memes": {}
-            }
+            return {"memes": {}}
 
     def savejson(self, data, jsonname):
         'A function which saves a json, given the filename'
@@ -70,13 +70,11 @@ class Fun:
 
         match = re.search(r'(:\s*)(\^\s?\))', message.content)
         if match:
-            await self.bot.send_message(
-                message.channel,
-                '{0[0]} {0[1]}'.format(match.groups())
-            )
+            await self.bot.send_message(message.channel,
+                                        '{0[0]} {0[1]}'.format(match.groups()))
 
     @commands.command()
-    async def meme(self, memename: str, imglink: str=""):
+    async def meme(self, memename: str, imglink: str = ""):
         '''Posts a saved imgur link via a specified name
         or saves an imgur link to file under the name.
         Converts all memenames to lower case'''
@@ -98,7 +96,7 @@ class Fun:
             self.logger.warning('User entered an invalid meme name')
 
     @commands.command()
-    async def removememe(self, memename: str=None):
+    async def removememe(self, memename: str = None):
         '''Removes a meme from file via the specific memename'''
         if memename:
             memename = memename.lower()
@@ -124,7 +122,7 @@ class Fun:
         await self.bot.say(response)
 
     @commands.command(pass_context=True)
-    async def guess(self, ctx, guess: int=0):
+    async def guess(self, ctx, guess: int = 0):
         '''Allows the user to guess a number. If there is no number to guess a
         new game is started'''
         if checks.is_private_channel(ctx):
@@ -135,13 +133,12 @@ class Fun:
             if guess < 1 or guess > self.guess_max:
                 await self.bot.delete_message(ctx.message)
             elif guess == self.guess_number:
-                await self.bot.say('{} is correct! {} wins!'
-                                   .format(guess, ctx.message.author.mention))
+                await self.bot.say('{} is correct! {} wins!'.format(
+                    guess, ctx.message.author.mention))
                 self.guess_number = 0
             elif guess < self.guess_number:
                 await self.bot.delete_message(ctx.message)
-                await self.bot.say('{} is too low! Guess again!'
-                                   .format(guess))
+                await self.bot.say('{} is too low! Guess again!'.format(guess))
             else:
                 await self.bot.delete_message(ctx.message)
                 await self.bot.say('{} is too high! Guess again!'
@@ -153,14 +150,14 @@ class Fun:
             self.logger.info('New game started from 1-%s. The number is %s.',
                              guess, self.guess_number)
             self.guess_max = guess
-            await self.bot.say('New game started! Guess the number '
-                               + 'between 1 and {}'.format(guess))
+            await self.bot.say('New game started! Guess the number ' +
+                               'between 1 and {}'.format(guess))
 
     @commands.command()
-    async def emoji(self, emoji: str, number: int=1):
+    async def emoji(self, emoji: str, number: int = 1):
         'Converts a string to :string: aka an emoji'
         emoji = ":" + emoji + ":"
-        await self.bot.say((emoji*number))
+        await self.bot.say((emoji * number))
 
     @commands.command()
     async def lmgtfy(self, *args):
