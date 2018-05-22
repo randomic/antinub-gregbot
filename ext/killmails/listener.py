@@ -14,7 +14,7 @@ from utils.log import get_logger
 from .poster import ZKILLBOARD_BASE_URL
 
 REDISQ_URL = 'https://redisq.zkillboard.com/listen.php'
-INITIAL_BACKOFF = 10
+INITIAL_BACKOFF = 0.1
 MAXIMUM_BACKOFF = 3600
 EXPONENTIAL_BACKOFF_FACTOR = 2
 
@@ -43,13 +43,13 @@ class RedisQListener:
     def listen_task_done(self, task: asyncio.Task):
         try:
             package = task.result()
-            if not package:
+            if package:
+                self.bot.dispatch(
+                    'killmail',
+                    package,
+                    debug_info=ZKILLBOARD_BASE_URL.format(package["killID"]))
+            else:
                 self.logger.debug('Ignoring null package')
-                return
-            self.bot.dispatch(
-                'killmail',
-                package,
-                debug_info=ZKILLBOARD_BASE_URL.format(package["killID"]))
         except asyncio.CancelledError:
             return
         except FetchError as exception:
