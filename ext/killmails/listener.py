@@ -71,7 +71,6 @@ class RedisQListener:
                 contents: dict = package['package']
                 if contents:
                     return contents
-                self.logger.debug('RedisQ returned null package')
 
         except (aiohttp.errors.HttpProcessingError,
                 aiohttp.errors.ClientResponseError,
