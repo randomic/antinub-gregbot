@@ -21,9 +21,9 @@ class DiscordRelay:
         if self.client.is_logged_in:
             resp = '\n  \u2714 {} - Connected'
         else:
-            resp = '\n  \u2716 {} - Disconnected'
+            resp = '\n  \u2716 {} ({}) - Disconnected'
         fmt = ", ".join(map(lambda x: x.name, self.client.servers))
-        return resp.format(fmt)
+        return resp.format(self.config['description'], fmt)
 
     async def on_ready(self):
         await self.client.change_presence(status=Status.invisible)
