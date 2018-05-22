@@ -106,7 +106,7 @@ class KillmailPoster(EsiCog):
         for attacker in package["killmail"]["attackers"]:
             if "corporation_id" not in attacker:
                 continue  # Some NPCs do not have a corporation.
-            if await self.is_corporation_relevant("corporation_id"):
+            if await self.is_corporation_relevant(attacker["corporation_id"]):
                 #  Mark killmail as a kill
                 package["colour"] = discord.Colour.dark_green()
                 return True
