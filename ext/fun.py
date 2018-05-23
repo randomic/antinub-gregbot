@@ -4,7 +4,6 @@ Meme cog made by Steveizi for antinub-gregbot project.
 Contains several useless but fun commands
 '''
 import json
-import logging
 import re
 from os.path import isfile
 from random import randint
@@ -64,7 +63,7 @@ class Fun:
         return response
 
     async def on_message(self, message):
-        "Search for r':\\s*\\^\\)' and reply with equivalent plus 1 space"
+        "Search for regex patterns and reply with meme continuation"
         if message.author == self.bot.user:
             return
 
@@ -72,6 +71,10 @@ class Fun:
         if match:
             await self.bot.send_message(message.channel,
                                         '{0[0]} {0[1]}'.format(match.groups()))
+        match = re.search(r'(\S\s+|^\s*)(\)\)+)$', message.content)
+        if match:
+            await self.bot.send_message(message.channel,
+                                        '{0[1]})'.format(match.groups()))
 
     @commands.command()
     async def meme(self, memename: str, imglink: str = ""):
