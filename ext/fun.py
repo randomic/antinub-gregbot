@@ -67,14 +67,16 @@ class Fun:
         if message.author == self.bot.user:
             return
 
-        match = re.search(r'(:[\t ]*)(\^ ?\))', message.content)
+        match = re.search(r'(:[\t ]*)(\^ ?\\?\)+)', message.content)
         if match:
-            await self.bot.send_message(message.channel,
-                                        '{0[0]} {0[1]}'.format(match.groups()))
+            return await self.bot.send_message(message.channel,
+                                               '{0[0]} {0[1]}'.format(
+                                                   match.groups()))
         match = re.search(r'(\S\s+|^\s*)(\\?\)+)\s*$', message.content)
         if match:
-            await self.bot.send_message(message.channel,
-                                        '{0[1]})'.format(match.groups()))
+            return await self.bot.send_message(message.channel,
+                                               '{0[1]})'.format(
+                                                   match.groups()))
 
     @commands.command()
     async def meme(self, memename: str, imglink: str = ""):
