@@ -1,6 +1,7 @@
 import functools
 import typing
 from datetime import datetime
+from enum import Enum
 
 import tinydb
 import discord
@@ -18,6 +19,19 @@ def setup(bot: commands.Bot):
     bot.add_cog(KillmailPoster(bot))
 
 
+class Relevancy(Enum):
+    def __repr__(self):
+        return '<%s.%s>' % (self.__class__.__name__, self.name)
+
+    @property
+    def colour(self):
+        return self.value["colour"]  # pylint: disable=unsubscriptable-object
+
+    IRRELEVANT = {}
+    LOSSMAIL = {"colour": discord.Colour.dark_red()}
+    KILLMAIL = {"colour": discord.Colour.dark_green()}
+
+
 class KillmailPoster(EsiCog):
     def __init__(self, bot: commands.Bot):
         super(KillmailPoster, self).__init__(bot)
@@ -29,7 +43,8 @@ class KillmailPoster(EsiCog):
         self.relevancy = tinydb.Query()
 
     async def on_killmail(self, package: dict, **dummy_kwargs):
-        if not await self.is_relevant(package):
+        package["relevancy"] = await self.is_relevant(package)
+        if package["relevancy"] is Relevancy.IRRELEVANT:
             self.logger.debug("Ignoring irrelevant killmail")
             return
         self.logger.info("Posting %s",
@@ -37,9 +52,9 @@ class KillmailPoster(EsiCog):
         embed = await self.generate_embed(package)
         message = await self.bot.send_message(
             self.bot.get_channel(self.config_table["channel"]), embed=embed)
-        await self.add_reactions(message)
+        await self.add_reactions(message, package)
 
-    async def add_reactions(self, message: discord.Message):
+    async def add_reactions(self, message: discord.Message, package: dict):
         # Flags 92, 93, 94 are rig slots
         pass
 
@@ -47,18 +62,23 @@ class KillmailPoster(EsiCog):
         embed = discord.Embed()
 
         names = await self.fetch_names(package)
-        embed.title = "{} | {} | {}".format(
-            names["solar_system"], names["ship_type"], names["character"])
-        embed.description = ("{} lost their {} in {} ({})\n"
-                             "Total Value: {:,} ISK\n"
+        identity = names["affiliation"]
+        if "character" in names:
+            identity = "{0[character]} ({0[affiliation]})".format(names)
+
+        embed.title = "{0[solar_system]} | {0[ship_type]} | {identity}".format(
+            names, identity=identity)
+        embed.description = ("{identity} lost their {0[ship_type]} in "
+                             "{0[solar_system]} ({0[region]})\n"
+                             "Total Value: {1:,} ISK\n"
                              "\u200b").format(
-                                 names["character"], names["ship_type"],
-                                 names["solar_system"], names["region"],
-                                 package["zkb"]["totalValue"])
+                                 names,
+                                 package["zkb"]["totalValue"],
+                                 identity=identity)
         embed.url = ZKILLBOARD_BASE_URL.format(package["killID"])
         embed.timestamp = datetime.strptime(
             package["killmail"]["killmail_time"], "%Y-%m-%dT%H:%M:%SZ")
-        embed.colour = package["colour"]
+        embed.colour = package["relevancy"].colour
         ship_type_id = package["killmail"]["victim"]["ship_type_id"]
         embed.set_thumbnail(url=EVE_IMAGESERVER_BASE_URL.format(ship_type_id))
 
@@ -89,29 +109,38 @@ class KillmailPoster(EsiCog):
         response = await esi_request(operation)
         names["ship_type"] = response.data["name"]
 
-        operation = esi_app.op["get_characters_character_id"](
-            character_id=package["killmail"]["victim"]["character_id"])
-        response = await esi_request(operation)
-        names["character"] = response.data["name"]
+        names["character"] = ""  # Structures have no character_id
+        if "character_id" in package["killmail"]["victim"]:
+            operation = esi_app.op["get_characters_character_id"](
+                character_id=package["killmail"]["victim"]["character_id"])
+            response = await esi_request(operation)
+            names["character"] = response.data["name"]
+
+        if "alliance_id" in package["killmail"]["victim"]:
+            operation = esi_app.op["get_alliances_alliance_id"](
+                alliance_id=package["killmail"]["victim"]["alliance_id"])
+            response = await esi_request(operation)
+            names["affiliation"] = response.data["name"]
+        else:
+            operation = esi_app.op["get_corporations_corporation_id"](
+                corporation_id=package["killmail"]["victim"]["corporation_id"])
+            response = await esi_request(operation)
+            names["affiliation"] = response.data["name"]
 
         return names
 
-    async def is_relevant(self, package: dict) -> bool:
+    async def is_relevant(self, package: dict) -> Relevancy:
         victim = package["killmail"]["victim"]
         if await self.is_corporation_relevant(victim["corporation_id"]):
-            #  Mark killmail as a loss
-            package["colour"] = discord.Colour.dark_red()
-            return True
+            return Relevancy.LOSSMAIL
 
         for attacker in package["killmail"]["attackers"]:
             if "corporation_id" not in attacker:
                 continue  # Some NPCs do not have a corporation.
             if await self.is_corporation_relevant(attacker["corporation_id"]):
-                #  Mark killmail as a kill
-                package["colour"] = discord.Colour.dark_green()
-                return True
+                return Relevancy.KILLMAIL
 
-        return False
+        return Relevancy.IRRELEVANT
 
     async def is_corporation_relevant(self, corporation_id: int) -> bool:
         if corporation_id in await self.get_relevant_corporations():
