@@ -29,8 +29,8 @@ class Relevancy(Enum):
         return self.value["colour"]  # pylint: disable=unsubscriptable-object
 
     IRRELEVANT = {}
-    LOSSMAIL = {"colour": discord.Colour(0x007a00)}
-    KILLMAIL = {"colour": discord.Colour(0x7a0000)}
+    LOSSMAIL = {"colour": discord.Colour(0x7a0000)}
+    KILLMAIL = {"colour": discord.Colour(0x007a00)}
 
 
 class KillmailPoster(EsiCog):
