@@ -14,6 +14,7 @@ from utils.log import get_logger
 ZKILLBOARD_BASE_URL = "https://zkillboard.com/kill/{:d}/"
 EVE_IMAGESERVER_BASE_URL = "https://imageserver.eveonline.com/Type/{:d}_64.png"
 REGIONAL_INDICATOR_F = "\U0001F1EB"
+BLACK_CIRCLE = "\U000026AB"
 
 
 def setup(bot: commands.Bot):
@@ -63,12 +64,11 @@ class KillmailPoster(EsiCog):
 
         data = package["data"]
         # Flags 92, 93, 94 are rig slots, 1137 is number of rig slots
-        pass
 
     async def generate_embed(self, package: dict) -> discord.Embed:
         embed = discord.Embed()
         data = package["data"]
-        names = [val["name"] for val in data.values()]
+        names = {k: v["name"] for (k, v) in data.items()}
 
         identity = names["affiliation"]
         if "character" in names:
@@ -104,13 +104,18 @@ class KillmailPoster(EsiCog):
         response = await esi_request(operation)
         data["solar_system"] = response.data
 
-        operation = esi_app.op["get_universe_constellations_constellation_id"](
-            constellation_id=response.data["constellation_id"])
-        response = await esi_request(operation)
-        operation = esi_app.op["get_universe_regions_region_id"](
-            region_id=response.data["region_id"])
-        response = await esi_request(operation)
-        data["region"] = response.data
+        if "constellation_id" in response.data:
+            operation = esi_app.op[
+                "get_universe_constellations_constellation_id"](
+                    constellation_id=response.data["constellation_id"])
+            response = await esi_request(operation)
+            operation = esi_app.op["get_universe_regions_region_id"](
+                region_id=response.data["region_id"])
+            response = await esi_request(operation)
+            data["region"] = response.data
+        else:  # Workaround for Abyssal systems
+            data["solar_system"] = {"name": "Abyssal Space"}
+            data["region"] = {"name": BLACK_CIRCLE}
 
         operation = esi_app.op["get_universe_types_type_id"](
             type_id=package["killmail"]["victim"]["ship_type_id"])
