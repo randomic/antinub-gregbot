@@ -41,6 +41,12 @@ class KillmailPoster(EsiCog):
         self.logger = get_logger(__name__, bot)
         self.bot = bot
         self.config_table = KeyValueTable(self.bot.tdb, "killmails.config")
+        self.channel = self.bot.get_channel(self.config_table["channel"])
+        self.rigs_emoji = None
+        for emoji in self.channel.server.emojis:
+            if str(emoji) == self.config_table["rigs_emoji"]:
+                self.rigs_emoji = emoji
+                break
         self.relevancy_table = self.bot.tdb.table("killmails.relevancies")
         self.relevancy = tinydb.Query()
 
@@ -53,8 +59,7 @@ class KillmailPoster(EsiCog):
                          ZKILLBOARD_BASE_URL.format(package["killID"]))
         package["data"] = await self.fetch_data(package)
         embed = await self.generate_embed(package)
-        message = await self.bot.send_message(
-            self.bot.get_channel(self.config_table["channel"]), embed=embed)
+        message = await self.bot.send_message(self.channel, embed=embed)
         await self.add_reactions(message, package)
 
     async def add_reactions(self, message: discord.Message, package: dict):
@@ -62,8 +67,17 @@ class KillmailPoster(EsiCog):
         if relevancy is Relevancy.LOSSMAIL:
             await self.bot.add_reaction(message, REGIONAL_INDICATOR_F)
 
-        data = package["data"]
-        # Flags 92, 93, 94 are rig slots, 1137 is number of rig slots
+        if self.rigs_emoji is None:
+            return
+        # Flags 92, 93, 94 are rig slots
+        slots = [val["flag"] for val in package["killmail"]["victim"]["items"]]
+        number_of_rigs = len(list(filter(lambda x: x in (92, 93, 94), slots)))
+        max_rigs = list(
+            filter(
+                lambda x: x["attribute_id"] == 1137,  # number of rig slots on ship
+                package["data"]["ship_type"]["dogma_attributes"]))
+        if max_rigs and number_of_rigs < max_rigs[0]["value"]:
+            await self.bot.add_reaction(message, self.rigs_emoji)
 
     async def generate_embed(self, package: dict) -> discord.Embed:
         embed = discord.Embed()
@@ -122,7 +136,7 @@ class KillmailPoster(EsiCog):
         response = await esi_request(operation)
         data["ship_type"] = response.data
 
-        data["character"] = ""  # Structures have no character_id
+        data["character"] = {"name": ""}  # Structures have no character_id
         if "character_id" in package["killmail"]["victim"]:
             operation = esi_app.op["get_characters_character_id"](
                 character_id=package["killmail"]["victim"]["character_id"])
