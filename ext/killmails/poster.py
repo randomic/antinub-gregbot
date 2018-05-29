@@ -11,8 +11,10 @@ from utils.esicog import EsiCog
 from utils.kvtable import KeyValueTable
 from utils.log import get_logger
 
-ZKILLBOARD_BASE_URL = 'https://zkillboard.com/kill/{:d}/'
+ZKILLBOARD_BASE_URL = "https://zkillboard.com/kill/{:d}/"
 EVE_IMAGESERVER_BASE_URL = "https://imageserver.eveonline.com/Type/{:d}_64.png"
+REGIONAL_INDICATOR_F = "\U0001F1EB"
+BLACK_CIRCLE = "\U000026AB"
 
 
 def setup(bot: commands.Bot):
@@ -39,6 +41,12 @@ class KillmailPoster(EsiCog):
         self.logger = get_logger(__name__, bot)
         self.bot = bot
         self.config_table = KeyValueTable(self.bot.tdb, "killmails.config")
+        self.channel = self.bot.get_channel(self.config_table["channel"])
+        self.rigs_emoji = None
+        for emoji in self.channel.server.emojis:
+            if str(emoji) == self.config_table["rigs_emoji"]:
+                self.rigs_emoji = emoji
+                break
         self.relevancy_table = self.bot.tdb.table("killmails.relevancies")
         self.relevancy = tinydb.Query()
 
@@ -49,19 +57,33 @@ class KillmailPoster(EsiCog):
             return
         self.logger.info("Posting %s",
                          ZKILLBOARD_BASE_URL.format(package["killID"]))
+        package["data"] = await self.fetch_data(package)
         embed = await self.generate_embed(package)
-        message = await self.bot.send_message(
-            self.bot.get_channel(self.config_table["channel"]), embed=embed)
+        message = await self.bot.send_message(self.channel, embed=embed)
         await self.add_reactions(message, package)
 
     async def add_reactions(self, message: discord.Message, package: dict):
+        relevancy = package["relevancy"]
+        if relevancy is Relevancy.LOSSMAIL:
+            await self.bot.add_reaction(message, REGIONAL_INDICATOR_F)
+
+        if self.rigs_emoji is None:
+            return
         # Flags 92, 93, 94 are rig slots
-        pass
+        slots = [val["flag"] for val in package["killmail"]["victim"]["items"]]
+        number_of_rigs = len(list(filter(lambda x: x in (92, 93, 94), slots)))
+        max_rigs = list(
+            filter(
+                lambda x: x["attribute_id"] == 1137,  # number of rig slots on ship
+                package["data"]["ship_type"]["dogma_attributes"]))
+        if max_rigs and number_of_rigs < max_rigs[0]["value"]:
+            await self.bot.add_reaction(message, self.rigs_emoji)
 
     async def generate_embed(self, package: dict) -> discord.Embed:
         embed = discord.Embed()
+        data = package["data"]
+        names = {k: v["name"] for (k, v) in data.items()}
 
-        names = await self.fetch_names(package)
         identity = names["affiliation"]
         if "character" in names:
             identity = "{0[character]} ({0[affiliation]})".format(names)
@@ -84,50 +106,55 @@ class KillmailPoster(EsiCog):
 
         return embed
 
-    async def fetch_names(self, package: dict) -> dict:
+    async def fetch_data(self, package: dict) -> dict:
         esi_app = await self.get_esi_app()
         esi_client = await self.get_esi_client()
         esi_request = functools.partial(self.esi_request, self.bot.loop,
                                         esi_client)
-        names = {}
+        data = {}
 
         operation = esi_app.op["get_universe_systems_system_id"](
             system_id=package["killmail"]["solar_system_id"])
         response = await esi_request(operation)
-        names["solar_system"] = response.data["name"]
+        data["solar_system"] = response.data
 
-        operation = esi_app.op["get_universe_constellations_constellation_id"](
-            constellation_id=response.data["constellation_id"])
-        response = await esi_request(operation)
-        operation = esi_app.op["get_universe_regions_region_id"](
-            region_id=response.data["region_id"])
-        response = await esi_request(operation)
-        names["region"] = response.data["name"]
+        if "constellation_id" in response.data:
+            operation = esi_app.op[
+                "get_universe_constellations_constellation_id"](
+                    constellation_id=response.data["constellation_id"])
+            response = await esi_request(operation)
+            operation = esi_app.op["get_universe_regions_region_id"](
+                region_id=response.data["region_id"])
+            response = await esi_request(operation)
+            data["region"] = response.data
+        else:  # Workaround for Abyssal systems
+            data["solar_system"] = {"name": "Abyssal Space"}
+            data["region"] = {"name": BLACK_CIRCLE}
 
         operation = esi_app.op["get_universe_types_type_id"](
             type_id=package["killmail"]["victim"]["ship_type_id"])
         response = await esi_request(operation)
-        names["ship_type"] = response.data["name"]
+        data["ship_type"] = response.data
 
-        names["character"] = ""  # Structures have no character_id
+        data["character"] = {"name": ""}  # Structures have no character_id
         if "character_id" in package["killmail"]["victim"]:
             operation = esi_app.op["get_characters_character_id"](
                 character_id=package["killmail"]["victim"]["character_id"])
             response = await esi_request(operation)
-            names["character"] = response.data["name"]
+            data["character"] = response.data
 
         if "alliance_id" in package["killmail"]["victim"]:
             operation = esi_app.op["get_alliances_alliance_id"](
                 alliance_id=package["killmail"]["victim"]["alliance_id"])
             response = await esi_request(operation)
-            names["affiliation"] = response.data["name"]
+            data["affiliation"] = response.data
         else:
             operation = esi_app.op["get_corporations_corporation_id"](
                 corporation_id=package["killmail"]["victim"]["corporation_id"])
             response = await esi_request(operation)
-            names["affiliation"] = response.data["name"]
+            data["affiliation"] = response.data
 
-        return names
+        return data
 
     async def is_relevant(self, package: dict) -> Relevancy:
         victim = package["killmail"]["victim"]
