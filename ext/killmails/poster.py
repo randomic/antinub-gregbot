@@ -11,8 +11,9 @@ from utils.esicog import EsiCog
 from utils.kvtable import KeyValueTable
 from utils.log import get_logger
 
-ZKILLBOARD_BASE_URL = 'https://zkillboard.com/kill/{:d}/'
+ZKILLBOARD_BASE_URL = "https://zkillboard.com/kill/{:d}/"
 EVE_IMAGESERVER_BASE_URL = "https://imageserver.eveonline.com/Type/{:d}_64.png"
+REGIONAL_INDICATOR_F = "\U0001F1EB"
 
 
 def setup(bot: commands.Bot):
@@ -49,19 +50,26 @@ class KillmailPoster(EsiCog):
             return
         self.logger.info("Posting %s",
                          ZKILLBOARD_BASE_URL.format(package["killID"]))
+        package["data"] = await self.fetch_data(package)
         embed = await self.generate_embed(package)
         message = await self.bot.send_message(
             self.bot.get_channel(self.config_table["channel"]), embed=embed)
         await self.add_reactions(message, package)
 
     async def add_reactions(self, message: discord.Message, package: dict):
-        # Flags 92, 93, 94 are rig slots
+        relevancy = package["relevancy"]
+        if relevancy is Relevancy.LOSSMAIL:
+            await self.bot.add_reaction(message, REGIONAL_INDICATOR_F)
+
+        data = package["data"]
+        # Flags 92, 93, 94 are rig slots, 1137 is number of rig slots
         pass
 
     async def generate_embed(self, package: dict) -> discord.Embed:
         embed = discord.Embed()
+        data = package["data"]
+        names = [val["name"] for val in data.values()]
 
-        names = await self.fetch_names(package)
         identity = names["affiliation"]
         if "character" in names:
             identity = "{0[character]} ({0[affiliation]})".format(names)
@@ -84,17 +92,17 @@ class KillmailPoster(EsiCog):
 
         return embed
 
-    async def fetch_names(self, package: dict) -> dict:
+    async def fetch_data(self, package: dict) -> dict:
         esi_app = await self.get_esi_app()
         esi_client = await self.get_esi_client()
         esi_request = functools.partial(self.esi_request, self.bot.loop,
                                         esi_client)
-        names = {}
+        data = {}
 
         operation = esi_app.op["get_universe_systems_system_id"](
             system_id=package["killmail"]["solar_system_id"])
         response = await esi_request(operation)
-        names["solar_system"] = response.data["name"]
+        data["solar_system"] = response.data
 
         operation = esi_app.op["get_universe_constellations_constellation_id"](
             constellation_id=response.data["constellation_id"])
@@ -102,32 +110,32 @@ class KillmailPoster(EsiCog):
         operation = esi_app.op["get_universe_regions_region_id"](
             region_id=response.data["region_id"])
         response = await esi_request(operation)
-        names["region"] = response.data["name"]
+        data["region"] = response.data
 
         operation = esi_app.op["get_universe_types_type_id"](
             type_id=package["killmail"]["victim"]["ship_type_id"])
         response = await esi_request(operation)
-        names["ship_type"] = response.data["name"]
+        data["ship_type"] = response.data
 
-        names["character"] = ""  # Structures have no character_id
+        data["character"] = ""  # Structures have no character_id
         if "character_id" in package["killmail"]["victim"]:
             operation = esi_app.op["get_characters_character_id"](
                 character_id=package["killmail"]["victim"]["character_id"])
             response = await esi_request(operation)
-            names["character"] = response.data["name"]
+            data["character"] = response.data
 
         if "alliance_id" in package["killmail"]["victim"]:
             operation = esi_app.op["get_alliances_alliance_id"](
                 alliance_id=package["killmail"]["victim"]["alliance_id"])
             response = await esi_request(operation)
-            names["affiliation"] = response.data["name"]
+            data["affiliation"] = response.data
         else:
             operation = esi_app.op["get_corporations_corporation_id"](
                 corporation_id=package["killmail"]["victim"]["corporation_id"])
             response = await esi_request(operation)
-            names["affiliation"] = response.data["name"]
+            data["affiliation"] = response.data
 
-        return names
+        return data
 
     async def is_relevant(self, package: dict) -> Relevancy:
         victim = package["killmail"]["victim"]
