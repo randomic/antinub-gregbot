@@ -25,8 +25,8 @@ def get_esi_client():
     global ESI_CLIENT
 
     if not ESI_CLIENT:
-        ESI_CLIENT = esipy.EsiClient()
-    return ESI_CLIENT
+        ESI_CLIENT = esipy.EsiClient(retry_requests=True)
+    return ESI_CLIENT.request
 
 
 class EsiCog:

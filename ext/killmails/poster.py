@@ -136,7 +136,6 @@ class KillmailPoster(EsiCog):
         response = await esi_request(operation)
         data["ship_type"] = response.data
 
-        data["character"] = {"name": ""}  # Structures have no character_id
         if "character_id" in package["killmail"]["victim"]:
             operation = esi_app.op["get_characters_character_id"](
                 character_id=package["killmail"]["victim"]["character_id"])
