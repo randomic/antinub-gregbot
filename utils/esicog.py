@@ -6,7 +6,7 @@ from requests.adapters import DEFAULT_POOLSIZE
 
 from utils.log import get_logger
 
-ESI_SWAGGER_JSON = 'https://esi.evetech.net/latest/swagger.json'
+ESI_SWAGGER_JSON = 'https://esi.evetech.net/dev/swagger.json'
 ESI_APP: esipy.App = None
 ESI_CLIENT: esipy.EsiClient = None
 ESI_CLIENT_SEMAPHORE = asyncio.Semaphore(DEFAULT_POOLSIZE)
