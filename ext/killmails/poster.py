@@ -2,6 +2,7 @@ import functools
 from datetime import datetime
 from enum import Enum
 
+import esipy
 import tinydb
 import discord
 from discord.ext import commands
@@ -42,6 +43,7 @@ class KillmailPoster(EsiCog):
         self.bot = bot
         self.config_table = KeyValueTable(self.bot.tdb, "killmails.config")
         self.channel = self.bot.get_channel(self.config_table["channel"])
+        self.esi_client = esipy.EsiClient(retry_requests=True)
         self.rigs_emoji = None
         for emoji in self.channel.server.emojis:
             if str(emoji) == self.config_table["rigs_emoji"]:
@@ -115,7 +117,7 @@ class KillmailPoster(EsiCog):
 
     async def fetch_data(self, package: dict) -> dict:
         esi_app = await self.get_esi_app()
-        esi_client = await self.get_esi_client()
+        esi_client = self.esi_client
         esi_request = functools.partial(self.esi_request, self.bot.loop,
                                         esi_client)
         data = {}
