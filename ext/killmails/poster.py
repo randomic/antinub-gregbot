@@ -1,5 +1,4 @@
 import functools
-import typing
 from datetime import datetime
 from enum import Enum
 
@@ -14,7 +13,8 @@ from utils.log import get_logger
 ZKILLBOARD_BASE_URL = "https://zkillboard.com/kill/{:d}/"
 EVE_IMAGESERVER_BASE_URL = "https://imageserver.eveonline.com/Type/{:d}_64.png"
 REGIONAL_INDICATOR_F = "\U0001F1EB"
-BLACK_CIRCLE = "\U000026AB"
+ABYSSAL_SPACE_REGIONS = ("12000001", "12000002", "12000003", "12000004",
+                         "12000005")
 
 
 def setup(bot: commands.Bot):
@@ -51,7 +51,7 @@ class KillmailPoster(EsiCog):
         self.relevancy = tinydb.Query()
 
     async def on_killmail(self, package: dict, **dummy_kwargs):
-        package["relevancy"] = await self.is_relevant(package)
+        package["relevancy"] = self.is_relevant(package)
         if package["relevancy"] is Relevancy.IRRELEVANT:
             self.logger.debug("Ignoring irrelevant killmail")
             return
@@ -88,15 +88,22 @@ class KillmailPoster(EsiCog):
         if "character" in names:
             identity = "{0[character]} ({0[affiliation]})".format(names)
 
-        embed.title = "{0[solar_system]} | {0[ship_type]} | {identity}".format(
-            names, identity=identity)
+        solar_system = names["solar_system"]
+        location = "{0[solar_system]} ({0[region]})".format(names)
+        if names["region"] in ABYSSAL_SPACE_REGIONS:
+            solar_system = "Abyssal Space"
+            location = solar_system
+
+        embed.title = "{solar_system} | {0[ship_type]} | {identity}".format(
+            names, identity=identity, solar_system=solar_system)
         embed.description = ("{identity} lost their {0[ship_type]} in "
-                             "{0[solar_system]} ({0[region]})\n"
+                             "{location}\n"
                              "Total Value: {1:,} ISK\n"
                              "\u200b").format(
                                  names,
                                  package["zkb"]["totalValue"],
-                                 identity=identity)
+                                 identity=identity,
+                                 location=location)
         embed.url = ZKILLBOARD_BASE_URL.format(package["killID"])
         embed.timestamp = datetime.strptime(
             package["killmail"]["killmail_time"], "%Y-%m-%dT%H:%M:%SZ")
@@ -118,18 +125,13 @@ class KillmailPoster(EsiCog):
         response = await esi_request(operation)
         data["solar_system"] = response.data
 
-        if "constellation_id" in response.data:
-            operation = esi_app.op[
-                "get_universe_constellations_constellation_id"](
-                    constellation_id=response.data["constellation_id"])
-            response = await esi_request(operation)
-            operation = esi_app.op["get_universe_regions_region_id"](
-                region_id=response.data["region_id"])
-            response = await esi_request(operation)
-            data["region"] = response.data
-        else:  # Workaround for Abyssal systems
-            data["solar_system"] = {"name": "Abyssal Space"}
-            data["region"] = {"name": BLACK_CIRCLE}
+        operation = esi_app.op["get_universe_constellations_constellation_id"](
+            constellation_id=response.data["constellation_id"])
+        response = await esi_request(operation)
+        operation = esi_app.op["get_universe_regions_region_id"](
+            region_id=response.data["region_id"])
+        response = await esi_request(operation)
+        data["region"] = response.data
 
         operation = esi_app.op["get_universe_types_type_id"](
             type_id=package["killmail"]["victim"]["ship_type_id"])
@@ -155,52 +157,40 @@ class KillmailPoster(EsiCog):
 
         return data
 
-    async def is_relevant(self, package: dict) -> Relevancy:
+    def is_relevant(self, package: dict) -> Relevancy:
         victim = package["killmail"]["victim"]
-        if await self.is_corporation_relevant(victim["corporation_id"]):
+        if self.is_corporation_relevant(victim["corporation_id"]):
             return Relevancy.LOSSMAIL
+        if "alliance_id" in victim:
+            if self.is_alliance_relevant(victim["alliance_id"]):
+                return Relevancy.LOSSMAIL
 
         for attacker in package["killmail"]["attackers"]:
             if "corporation_id" not in attacker:
                 continue  # Some NPCs do not have a corporation.
-            if await self.is_corporation_relevant(attacker["corporation_id"]):
+            if self.is_corporation_relevant(attacker["corporation_id"]):
+                return Relevancy.KILLMAIL
+            if "alliance_id" not in attacker:
+                continue
+            if self.is_alliance_relevant(attacker["alliance_id"]):
                 return Relevancy.KILLMAIL
 
         return Relevancy.IRRELEVANT
 
-    async def is_corporation_relevant(self, corporation_id: int) -> bool:
-        if corporation_id in await self.get_relevant_corporations():
-            return True
-
-        if corporation_id in await self.get_relevant_alliances():
+    def is_corporation_relevant(self, corporation_id: int) -> bool:
+        corp_configs = self.relevancy_table.search(
+            self.relevancy.type == "corporation")
+        corp_list = [entry["value"] for entry in corp_configs]
+        if corporation_id in corp_list:
             return True
 
         return False
 
-    async def get_relevant_corporations(self) -> typing.List[int]:
-        corps = self.relevancy_table.search(
-            self.relevancy.type == "corporation")
-        return [entry["value"] for entry in corps]
-
-    async def get_relevant_alliances(self) -> typing.List[int]:
-        corp_ids = set()
-        alliances = self.relevancy_table.search(
+    def is_alliance_relevant(self, alliance_id: int) -> bool:
+        alliance_configs = self.relevancy_table.search(
             self.relevancy.type == "alliance")
-        alliance_ids = [entry["value"] for entry in alliances]
+        alliance_list = [entry["value"] for entry in alliance_configs]
+        if alliance_id in alliance_list:
+            return True
 
-        for alliance_id in alliance_ids:
-            alliance_corp_ids = await self.get_alliance_corporations(
-                alliance_id)
-            corp_ids.update(alliance_corp_ids)
-
-        return list(corp_ids)
-
-    async def get_alliance_corporations(self,
-                                        alliance_id: int) -> typing.List[int]:
-        esi_app = await self.get_esi_app()
-        operation = esi_app.op["get_alliances_alliance_id_corporations"](
-            alliance_id=alliance_id)
-
-        esi_client = await self.get_esi_client()
-        response = await self.esi_request(self.bot.loop, esi_client, operation)
-        return response.data
+        return False
