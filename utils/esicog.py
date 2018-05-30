@@ -45,7 +45,7 @@ class EsiCog:
 
     def __unload(self):
         self._esi_app_task.cancel()
-        self._esi_app_task.cancel()
+        self._esi_client_task.cancel()
 
     async def get_esi_app(self):
         return await self._esi_app_task
