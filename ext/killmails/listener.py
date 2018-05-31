@@ -4,7 +4,6 @@ Killmail fetching cog for antinub-gregbot project.
 Polls zKillboard's RedisQ API and dispatches killmails as an event.
 '''
 import asyncio
-import logging
 
 import aiohttp
 import discord.ext.commands as commands
