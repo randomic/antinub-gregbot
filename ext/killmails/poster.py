@@ -1,4 +1,6 @@
+import asyncio
 import functools
+import typing
 from datetime import datetime
 from enum import Enum
 
@@ -53,7 +55,7 @@ class KillmailPoster(EsiCog):
         self.relevancy = tinydb.Query()
 
     async def on_killmail(self, package: dict, **dummy_kwargs):
-        package["relevancy"] = self.is_relevant(package)
+        package["relevancy"] = await self.is_relevant(package)
         if package["relevancy"] is Relevancy.IRRELEVANT:
             self.logger.debug("Ignoring irrelevant killmail")
             return
@@ -76,7 +78,8 @@ class KillmailPoster(EsiCog):
         number_of_rigs = len(list(filter(lambda x: x in (92, 93, 94), slots)))
         max_rigs = list(
             filter(
-                lambda x: x["attribute_id"] == 1137,  # number of rig slots on ship
+                # number of rig slots on ship
+                lambda x: x["attribute_id"] == 1137,
                 package["data"]["ship_type"]["dogma_attributes"]))
         if max_rigs and number_of_rigs < max_rigs[0]["value"]:
             await self.bot.add_reaction(message, self.rigs_emoji)
@@ -117,9 +120,8 @@ class KillmailPoster(EsiCog):
 
     async def fetch_data(self, package: dict) -> dict:
         esi_app = await self.get_esi_app()
-        esi_client = self.esi_client
         esi_request = functools.partial(self.esi_request, self.bot.loop,
-                                        esi_client)
+                                        self.esi_client)
         data = {}
 
         operation = esi_app.op["get_universe_systems_system_id"](
@@ -159,40 +161,39 @@ class KillmailPoster(EsiCog):
 
         return data
 
-    def is_relevant(self, package: dict) -> Relevancy:
+    async def is_relevant(self, package: dict) -> Relevancy:
+        relevant_corporations = await self.get_relevant_corporations()
+
         victim = package["killmail"]["victim"]
-        if self.is_corporation_relevant(victim["corporation_id"]):
+        if victim["corporation_id"] in relevant_corporations:
             return Relevancy.LOSSMAIL
-        if "alliance_id" in victim:
-            if self.is_alliance_relevant(victim["alliance_id"]):
-                return Relevancy.LOSSMAIL
 
         for attacker in package["killmail"]["attackers"]:
             if "corporation_id" not in attacker:
                 continue  # Some NPCs do not have a corporation.
-            if self.is_corporation_relevant(attacker["corporation_id"]):
-                return Relevancy.KILLMAIL
-            if "alliance_id" not in attacker:
-                continue
-            if self.is_alliance_relevant(attacker["alliance_id"]):
+            if attacker["corporation_id"] in relevant_corporations:
                 return Relevancy.KILLMAIL
 
         return Relevancy.IRRELEVANT
 
-    def is_corporation_relevant(self, corporation_id: int) -> bool:
+    async def get_relevant_corporations(self) -> typing.Set[int]:
         corp_configs = self.relevancy_table.search(
             self.relevancy.type == "corporation")
-        corp_list = [entry["value"] for entry in corp_configs]
-        if corporation_id in corp_list:
-            return True
+        corp_list = set([entry["value"] for entry in corp_configs])
 
-        return False
-
-    def is_alliance_relevant(self, alliance_id: int) -> bool:
         alliance_configs = self.relevancy_table.search(
             self.relevancy.type == "alliance")
         alliance_list = [entry["value"] for entry in alliance_configs]
-        if alliance_id in alliance_list:
-            return True
 
-        return False
+        esi_app = await self.get_esi_app()
+        esi_request = functools.partial(self.esi_request, self.bot.loop,
+                                        self.esi_client)
+        operations = [
+            esi_app.op["get_alliances_alliance_id_corporations"](
+                alliance_id=alliance_id) for alliance_id in alliance_list
+        ]
+        responses = await asyncio.gather(*map(esi_request, operations))
+        for response in responses:
+            corp_list.update(response.data)
+
+        return corp_list
