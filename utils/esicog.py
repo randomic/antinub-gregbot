@@ -16,15 +16,12 @@ class EsiCog:
     def __init__(self, bot: commands.Bot):
         logger = get_logger(__name__, bot)
 
-        if self._esi_app_task is None:
+        if EsiCog._esi_app_task is None:
             logger.info("Creating esipy App...")
-            self._esi_app_task = bot.loop.run_in_executor(
+            EsiCog._esi_app_task = bot.loop.run_in_executor(
                 None, self._create_esi_app)
-            self._esi_app_task.add_done_callback(
+            EsiCog._esi_app_task.add_done_callback(
                 lambda f: logger.info("esipy App created"))
-
-    def __unload(self):
-        self._esi_app_task.cancel()
 
     async def get_esi_app(self) -> asyncio.Task:
         return await self._esi_app_task
