@@ -16,7 +16,7 @@ class EsiCog:
     def __init__(self, bot: commands.Bot):
         logger = get_logger(__name__, bot)
 
-        if not self._esi_app_task:
+        if self._esi_app_task is None:
             logger.info("Creating esipy App...")
             self._esi_app_task = bot.loop.run_in_executor(
                 None, self._create_esi_app)
