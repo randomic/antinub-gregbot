@@ -51,6 +51,11 @@ class KillmailPoster(EsiCog):
             if str(emoji) == self.config_table["rigs_emoji"]:
                 self.rigs_emoji = emoji
                 break
+        self.magnate_emoji = None
+        for emoji in self.channel.server.emojis:
+            if str(emoji) == self.config_table["magnate_emoji"]:
+                self.magnate_emoji = emoji
+                break
         self.relevancy_table = self.bot.tdb.table("killmails.relevancies")
         self.relevancy = tinydb.Query()
 
@@ -71,8 +76,13 @@ class KillmailPoster(EsiCog):
         if relevancy is Relevancy.LOSSMAIL:
             await self.bot.add_reaction(message, REGIONAL_INDICATOR_F)
 
-        if self.rigs_emoji is None:
-            return
+        if self.rigs_emoji and self.should_add_rig_emoji(package):
+            await self.bot.add_reaction(message, self.rigs_emoji)
+
+        if self.magnate_emoji and self.should_add_magnate_emoji(package):
+            await self.bot.add_reaction(message, self.magnate_emoji)
+
+    def should_add_rig_emoji(self, package: dict) -> bool:
         # Flags 92, 93, 94 are rig slots
         slots = [val["flag"] for val in package["killmail"]["victim"]["items"]]
         number_of_rigs = len(list(filter(lambda x: x in (92, 93, 94), slots)))
@@ -82,7 +92,20 @@ class KillmailPoster(EsiCog):
                 lambda x: x["attribute_id"] == 1137,
                 package["data"]["ship_type"]["dogma_attributes"]))
         if max_rigs and number_of_rigs < max_rigs[0]["value"]:
-            await self.bot.add_reaction(message, self.rigs_emoji)
+            return True
+
+        return False
+
+    def should_add_magnate_emoji(self, package: dict) -> bool:
+        magnate_ship_id = 29248
+        if package["killmail"]["victim"]["ship_type_id"] == magnate_ship_id:
+            return True
+
+        for attacker in package["killmail"]["attackers"]:
+            if attacker["ship_type_id"] == magnate_ship_id:
+                return True
+
+        return False
 
     async def generate_embed(self, package: dict) -> discord.Embed:
         embed = discord.Embed()
