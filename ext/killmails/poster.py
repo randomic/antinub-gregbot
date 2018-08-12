@@ -98,11 +98,11 @@ class KillmailPoster(EsiCog):
 
     def should_add_magnate_emoji(self, package: dict) -> bool:
         magnate_ship_id = 29248
-        if package["killmail"]["victim"]["ship_type_id"] == magnate_ship_id:
+        if package["killmail"]["victim"].get("ship_type_id", None) == magnate_ship_id:
             return True
 
         for attacker in package["killmail"]["attackers"]:
-            if attacker["ship_type_id"] == magnate_ship_id:
+            if attacker.get("ship_type_id", None) == magnate_ship_id:
                 return True
 
         return False
