@@ -10,6 +10,7 @@ from traceback import _format_final_exc_line, format_exception
 
 import discord.ext.commands as commands
 
+
 import utils.checks as checks
 from utils.log import get_logger
 from utils.messaging import Paginate, notify_owner
@@ -20,7 +21,7 @@ def setup(bot):
     bot.add_cog(Control(bot))
 
 
-class Control:
+class Control(commands.Cog, name='Core'):
     '''A cog defining commands for controlling the
     bot's operation such as stopping the bot'''
 

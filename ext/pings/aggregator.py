@@ -16,13 +16,14 @@ def setup(bot: commands.Bot):
     bot.add_cog(PingAggregator(bot, JABBER))
 
 
-class PingAggregator:
+class PingAggregator(commands.Cog, name='PingAggregator'):
     '''A cog which connects to config defined xmpp servers and relays messages
     from certain senders to the config defined channel'''
 
     def __init__(self, bot, config):
         self.logger = get_logger(__name__, bot)
         self.bot = bot
+        bot.add_listener(self.on_broadcast)
         self.relays = []
 
         self.create_clients(config)
@@ -63,11 +64,10 @@ class PingAggregator:
 
             if channel:
                 embed = embeds[0]
-                await self.bot.send_message(
-                    channel, embed=embed, content=destination.get('prefix')
+                await channel.send(embed=embed, content=destination.get('prefix')
                 )  # Only show prefix on first page.
                 for embed in embeds[1:]:
-                    await self.bot.send_message(channel, embed=embed)
+                    await channel.send(embed=embed)
             else:
                 await notify_owner(self.bot,
                                    ['Invalid channel: {}'.format(channel_id)])

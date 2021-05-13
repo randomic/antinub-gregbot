@@ -1,0 +1,31 @@
+---
+kind: pipeline
+type: kubernetes
+name: default
+
+steps:
+  - name: push-frontend
+    image: docker:dind
+    environment:
+      DOCKER_USER:
+        from_secret: ghcr_login
+      DOCKER_PASSWORD:
+        from_secret: ghcr_password
+    volumes:
+      - name: dockersock
+        path: /var/run/
+    commands:
+      - export SANITIZED_DRONE_COMMIT_BRANCH=$(echo ${DRONE_COMMIT_BRANCH} | sed 's#/#-#g')
+      - export COMMIT_SHA=${DRONE_COMMIT_SHA:0:7}
+      - docker build -t ghcr.io/greg2010/antinub-gregbot .
+      - docker tag ghcr.io/greg2010/antinub-gregbot ghcr.io/greg2010/antinub-gregbot:$SANITIZED_DRONE_COMMIT_BRANCH\_$COMMIT_SHA
+      - docker tag ghcr.io/greg2010/antinub-gregbot ghcr.io/greg2010/antinub-gregbot:$SANITIZED_DRONE_COMMIT_BRANCH\_latest
+      - docker tag ghcr.io/greg2010/antinub-gregbot ghcr.io/greg2010/antinub-gregbot:latest
+      - docker login ghcr.io -u $DOCKER_USER -p $DOCKER_PASSWORD
+      - docker push ghcr.io/greg2010/antinub-gregbot:$SANITIZED_DRONE_COMMIT_BRANCH\_$COMMIT_SHA
+      - docker push ghcr.io/greg2010/antinub-gregbot:$SANITIZED_DRONE_COMMIT_BRANCH\_latest
+      - docker push ghcr.io/greg2010/antinub-gregbot:latest
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/

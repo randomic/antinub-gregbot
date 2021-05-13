@@ -14,13 +14,13 @@ def setup(bot):
     bot.add_cog(Eve(bot))
 
 
-class Eve:
+class Eve(commands.Cog, name="Eve"):
     def __init__(self, bot):
         self.logger = get_logger(__name__, bot)
         self.bot = bot
         self.fmt = "%H:%M:%S"
 
     @commands.command()
-    async def evetime(self):
-        return await self.bot.say(
+    async def evetime(self, ctx):
+        return await ctx.send(
             "Current EVE time: " + datetime.utcnow().strftime(self.fmt))

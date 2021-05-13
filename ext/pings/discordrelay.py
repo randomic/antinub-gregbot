@@ -1,10 +1,11 @@
-from discord import Client, Status
+from discordself import Client, Status
 
 from utils.colourthief import get_embed_colour
 from utils.messaging import notify_owner
+from discordself.ext import commands
 
 
-class DiscordRelay:
+class DiscordRelay(commands.Cog, name='DiscordRelay'):
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
@@ -12,7 +13,7 @@ class DiscordRelay:
         self.client = Client(loop=bot.loop)
         self.client.event(self.on_ready)
         self.client.event(self.on_message)
-        bot.loop.create_task(self.client.start(config["token"], bot=False))
+        bot.loop.create_task(self.client.start(config["token"]))
 
     def disconnect(self):
         self.bot.loop.create_task(self.client.logout())
@@ -35,7 +36,7 @@ class DiscordRelay:
                 'sender': message.author.display_name,
                 'destinations': self.config['destinations'],
                 'description': '{}: {}'.format(
-                    message.server.name,
+                    message.guild.name,
                     message.channel.name or "Private Channel"
                 ),
                 'logo_url': self.config['logo_url'],

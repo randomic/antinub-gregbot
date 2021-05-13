@@ -1,7 +1,7 @@
 '''
 Command checks cog made for antinub-gregbot project.
 '''
-from discord import PrivateChannel
+from discord.abc import PrivateChannel
 
 
 def is_owner(ctx):

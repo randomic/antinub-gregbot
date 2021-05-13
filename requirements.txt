@@ -1,5 +1,0 @@
-discord.py~=0.16
-tinydb~=3.5
-aioxmpp~=0.9
-colorthief~=0.2
-esipy~=0.3

@@ -14,7 +14,7 @@ def setup(bot):
     bot.add_cog(Config(bot))
 
 
-class Config:
+class Config(commands.Cog, name='Config'):
     '''A cog defining commands for configuring the bot
 
     '''
