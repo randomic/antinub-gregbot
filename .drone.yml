@@ -4,7 +4,7 @@ type: kubernetes
 name: default
 
 steps:
-  - name: push-frontend
+  - name: push-docker
     image: docker:dind
     environment:
       DOCKER_USER:

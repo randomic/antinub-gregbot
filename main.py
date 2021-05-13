@@ -17,7 +17,7 @@ def start_bot():
     """Attempt to load required config or ask user (generally first time).
 
     """
-    tdb = TinyDB('db.json')
+    tdb = TinyDB('db.json', access_mode='r') # This is a hack. TODO figure out a better way
     config = KeyValueTable(tdb, 'config')
 
     try:
