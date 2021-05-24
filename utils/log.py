@@ -37,9 +37,9 @@ DEFAULT_LOGGING = {
 }
 
 
-def get_logger(name: str, bot: commands.Bot):
+def get_logger(name: str, debug: bool):
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG if bot.config["debug"] else logging.INFO)
+    logger.setLevel(logging.DEBUG if debug else logging.INFO)
     return logger
 
 

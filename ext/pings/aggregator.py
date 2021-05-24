@@ -3,8 +3,6 @@ from datetime import datetime
 
 from discord.embeds import Embed
 from discord.ext import commands
-
-from config import JABBER
 from utils.log import get_logger
 from utils.messaging import Paginate, notify_owner
 
@@ -13,20 +11,19 @@ from .jabberrelay import JabberRelay
 
 
 def setup(bot: commands.Bot):
-    bot.add_cog(PingAggregator(bot, JABBER))
+    bot.add_cog(PingAggregator(bot))
 
 
 class PingAggregator(commands.Cog, name='PingAggregator'):
     '''A cog which connects to config defined xmpp servers and relays messages
     from certain senders to the config defined channel'''
 
-    def __init__(self, bot, config):
+    def __init__(self, bot):
         self.logger = get_logger(__name__, bot)
         self.bot = bot
         bot.add_listener(self.on_broadcast)
         self.relays = []
-
-        self.create_clients(config)
+        self.create_clients(bot.ext_config['pings'])
 
     def create_clients(self, config):
         'Creates an JabberRelay client for each server specified'

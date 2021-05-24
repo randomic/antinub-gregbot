@@ -1,0 +1,9 @@
+pings:
+  discord_relays:
+    - token: "YOUR_TOKEN_HERE"
+      description: "Description"
+      logo_url: "https://pm1.narvii.com/6422/439159c580614aa8b9e801f87f6ffca3c5f454d0_128.jpg"
+      destinations:
+        - channel_id: 123456
+          prefix: "@here"
+  jabber_relays: []

@@ -1,5 +1,6 @@
 # Project specific ignores
 config.py
+config.yaml
 _test*
 *db*
 

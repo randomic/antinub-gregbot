@@ -11,8 +11,10 @@ colorthief = "~=0.2.1"
 EsiPy = "~=1.2.2"
 discord-py-self = {editable = true, ref = "v1.7.6", git = "https://github.com/dolfies/discord.py-self.git"}
 typing-extensions = "*"
+pyyaml = "*"
 
 [dev-packages]
+pylint = "*"
 
 [requires]
 python_version = "3.9"

@@ -1,7 +1,6 @@
 """
 Cog containing EVE Online commands which can be used by anyone
 """
-import logging
 from datetime import datetime
 
 import discord.ext.commands as commands
