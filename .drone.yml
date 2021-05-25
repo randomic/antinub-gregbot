@@ -29,3 +29,6 @@ volumes:
   - name: dockersock
     host:
       path: /var/run/
+---
+kind: signature
+hmac: 08bffc66ff0f70d420d8d4ccdf6e13692abe0f59d8eb434c215d742d19cdb6fa
