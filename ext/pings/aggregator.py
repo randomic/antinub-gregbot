@@ -5,6 +5,7 @@ from discord.embeds import Embed
 from discord.ext import commands
 from utils.log import get_logger
 from utils.messaging import Paginate, notify_owner
+from utils.checks import is_owner_private_channel
 
 from .discordrelay import DiscordRelay
 from .jabberrelay import JabberRelay
@@ -33,16 +34,6 @@ class PingAggregator(commands.Cog, name='PingAggregator'):
         for discord_config in config.get("discord_relays", []):
             self.relays.append(DiscordRelay(self.bot, discord_config))
 
-    def get_health(self):
-        'Returns a string describing the status of this cog'
-        if self.relays:
-            response = ''
-            for relay in self.relays:
-                response += relay.get_health()
-        else:
-            response = '\n  \u2716 No relays initialised'
-        return response
-
     async def on_broadcast(self, package):
         'Relay message to discord, ignore if it is a duplicate'
         body = package['body']
@@ -68,6 +59,26 @@ class PingAggregator(commands.Cog, name='PingAggregator'):
             else:
                 await notify_owner(self.bot,
                                    ['Invalid channel: {}'.format(channel_id)])
+
+
+    @commands.command()
+    @commands.check(is_owner_private_channel)
+    async def relay_health(self, ctx):
+        'Command describing status of relays'
+        if self.relays:
+            response = ''
+            for relay in self.relays:
+                state = relay.get_health()
+                if state['ready']:
+                    guild_str = ", ".join(map(lambda x: x.name, state['guilds']))
+                    response += '{}: ({}) - :white_check_mark:\n'\
+                        .format(state['description'], guild_str)
+                else:
+                    response += '{}- :negative_squared_cross_mark:\n'
+
+        else:
+            response = 'No relays initialised.'
+        return await ctx.send(response)
 
     @staticmethod
     def ping_embed(package, message, paginate):

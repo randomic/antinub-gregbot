@@ -19,12 +19,13 @@ class DiscordRelay(commands.Cog, name='DiscordRelay'):
         self.bot.loop.create_task(self.client.logout())
 
     def get_health(self):
-        if self.client.is_logged_in:
-            resp = '\n  \u2714 {} ({}) - Connected'
-        else:
-            resp = '\n  \u2716 {} ({}) - Disconnected'
-        fmt = ", ".join(map(lambda x: x.name, self.client.servers))
-        return resp.format(self.config['description'], fmt)
+        state = {}
+        state['ready'] = self.client.is_ready
+        state['description'] = self.config['description']
+        if self.client.is_ready:
+            state['guilds'] = self.client.guilds
+
+        return state
 
     async def on_ready(self):
         await self.client.change_presence(status=Status.invisible)
