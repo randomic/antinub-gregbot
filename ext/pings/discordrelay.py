@@ -32,13 +32,19 @@ class DiscordRelay(commands.Cog, name='DiscordRelay'):
         return state
 
     def route_message(self, message):
+        '''
+        Decides which messages go where based on the .yaml route config provided at startup
+        '''
         guild = message.guild.id
         channel = message.channel.id
         destinations = []
+        # Attempt to apply routing rules based on guild and channel ids
         for route in self.config['routes']:
             if 'from_guilds' in route and guild in route['from_guilds'] or\
             'from_channels' in route and channel in route['from_channels']:
-                destinations.extend(route['destinations'])
+                # Make sure the source channel is not in the ignore_channels list
+                if not ('ignore_channels' in route and channel in route['ignore_channels']):
+                    destinations.extend(route['destinations'])
 
         # If no destinations were found, route to catch-all destinations
         if len(destinations) == 0:

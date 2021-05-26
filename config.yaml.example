@@ -12,6 +12,10 @@ pings:
             - 1
             - 2
             - 3
+          ignore_channels:
+            - 1
+            - 2
+            - 3
           destinations:
             - channel_id: 5
               prefix: "@here"
