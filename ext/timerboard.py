@@ -21,7 +21,7 @@ class Timerboard:
     bot's timerboard functions'''
 
     def __init__(self, bot, fname):
-        self.logger = get_logger(__name__, bot)
+        self.logger = get_logger(__name__)
         self.bot = bot
         self.fname = fname
 

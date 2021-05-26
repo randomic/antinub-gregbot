@@ -41,7 +41,7 @@ class KillmailPoster(EsiCog):
     def __init__(self, bot: commands.Bot):
         super(KillmailPoster, self).__init__(bot)
 
-        self.logger = get_logger(__name__, bot)
+        self.logger = get_logger(__name__)
         self.bot = bot
         self.config_table = KeyValueTable(self.bot.tdb, "killmails.config")
         self.channel = self.bot.get_channel(self.config_table["channel"])

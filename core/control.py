@@ -26,7 +26,7 @@ class Control(commands.Cog, name='Core'):
     bot's operation such as stopping the bot'''
 
     def __init__(self, bot):
-        self.logger = get_logger(__name__, bot)
+        self.logger = get_logger(__name__)
         self.bot = bot
 
         # Override default event exception handling

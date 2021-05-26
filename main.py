@@ -79,14 +79,14 @@ async def when_ready(bot, ext_list):
 
     """
     await bot.wait_until_ready()
-    logger = get_logger(__name__, bot)
+    logger = get_logger(__name__)
     logger.info('Logged in as %s, id: %s', bot.user.name, bot.user.id)
     load_extensions(bot, ext_list)
 
 
 def load_extensions(bot, ext_list):
     'Load the startup extensions'
-    logger = get_logger(__name__, bot)
+    logger = get_logger(__name__)
     logger.info('Loading core extensions')
     bot.load_extension('core')
     logger.info('Successfully loaded core extensions')

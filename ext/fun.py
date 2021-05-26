@@ -23,7 +23,7 @@ class Fun:
     '''A cog defining meme commands'''
 
     def __init__(self, bot, fname):
-        self.logger = get_logger(__name__, bot)
+        self.logger = get_logger(__name__)
         self.bot = bot
         self.guess_number = 0
         self.guess_max = 0

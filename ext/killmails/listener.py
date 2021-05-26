@@ -27,7 +27,7 @@ class RedisQListener:
     backoff_wait = INITIAL_BACKOFF
 
     def __init__(self, bot: commands.Bot):
-        self.logger = get_logger(__name__, bot)
+        self.logger = get_logger(__name__)
         self.bot = bot
         self.redisq_polling_task = self.listen_task_start()
 

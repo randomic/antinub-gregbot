@@ -3,7 +3,16 @@ pings:
     - token: "YOUR_TOKEN_HERE"
       description: "Description"
       logo_url: "https://pm1.narvii.com/6422/439159c580614aa8b9e801f87f6ffca3c5f454d0_128.jpg"
-      destinations:
-        - channel_id: 123456
-          prefix: "@here"
+      routes:
+        - from_channels:
+            - 1
+            - 2
+            - 3
+          from_guilds:
+            - 1
+            - 2
+            - 3
+          destinations:
+            - channel_id: 5
+              prefix: "@here"
   jabber_relays: []

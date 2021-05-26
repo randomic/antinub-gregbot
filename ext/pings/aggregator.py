@@ -20,7 +20,7 @@ class PingAggregator(commands.Cog, name='PingAggregator'):
     from certain senders to the config defined channel'''
 
     def __init__(self, bot):
-        self.logger = get_logger(__name__, bot)
+        self.logger = get_logger(__name__)
         self.bot = bot
         bot.add_listener(self.on_broadcast)
         self.relays = []

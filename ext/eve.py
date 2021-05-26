@@ -15,7 +15,7 @@ def setup(bot):
 
 class Eve(commands.Cog, name="Eve"):
     def __init__(self, bot):
-        self.logger = get_logger(__name__, bot)
+        self.logger = get_logger(__name__)
         self.bot = bot
         self.fmt = "%H:%M:%S"
 

@@ -3,6 +3,7 @@ Module containing default logging settings for gregbot.
 '''
 import logging
 import logging.config
+import os
 
 from discord.ext import commands
 
@@ -37,9 +38,9 @@ DEFAULT_LOGGING = {
 }
 
 
-def get_logger(name: str, debug: bool):
+def get_logger(name: str):
     logger = logging.getLogger(name)
-    logger.setLevel(logging.DEBUG if debug else logging.INFO)
+    logger.setLevel(logging.DEBUG if os.environ.get('GREGBOT_DEBUG_LOGS') else logging.INFO)
     return logger
 
 

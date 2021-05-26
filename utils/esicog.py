@@ -14,7 +14,7 @@ class EsiCog:
     _semaphore = asyncio.Semaphore(DEFAULT_POOLSIZE)
 
     def __init__(self, bot: commands.Bot):
-        logger = get_logger(__name__, bot)
+        logger = get_logger(__name__)
 
         if EsiCog._esi_app_task is None:
             logger.info("Creating esipy App...")
