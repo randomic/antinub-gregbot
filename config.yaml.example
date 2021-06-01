@@ -1,8 +1,8 @@
 pings:
+  default_icon_url: "https://pm1.narvii.com/6422/439159c580614aa8b9e801f87f6ffca3c5f454d0_128.jpg"
   discord_relays:
     - token: "YOUR_TOKEN_HERE"
       description: "Description"
-      logo_url: "https://pm1.narvii.com/6422/439159c580614aa8b9e801f87f6ffca3c5f454d0_128.jpg"
       routes:
         - from_channels:
             - 1

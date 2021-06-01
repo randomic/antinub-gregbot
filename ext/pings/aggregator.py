@@ -32,6 +32,7 @@ class PingAggregator(commands.Cog, name='PingAggregator'):
             self.relays.append(
                 JabberRelay(self.bot, jabber_config, self.logger))
         for discord_config in config.get("discord_relays", []):
+            discord_config['default_icon_url'] = config['default_icon_url']
             self.relays.append(DiscordRelay(self.bot, discord_config))
 
     async def on_broadcast(self, package):
