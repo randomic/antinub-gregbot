@@ -88,6 +88,11 @@ class DiscordRelay(commands.Cog, name='DiscordRelay'):
     async def on_message(self, message):
         if message.mention_everyone:
             message_logo = self.get_message_logo(message)
+            content = message.clean_content
+            for embed in message.embeds:
+                self.logger.debug('Converting embed for message_id={} to string {}'\
+                    .format(message.id, str(embed)))
+                content += '\n\n' + embed.description
             package = {
                 'body': message.clean_content,
                 'sender': message.author.display_name,
